@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shristhi's Goa Panic - Sketch Edition</title>
+    <title>Shristhi's Goa Panic - Cute Edition</title>
     <style>
         /* HANDWRITTEN FONTS */
-        @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Patrick+Hand&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Patrick+Hand&family=Gochi+Hand&display=swap');
 
         body {
             margin: 0;
@@ -36,7 +36,7 @@
             opacity: 0.15; /* Subtle sketchbook look */
         }
 
-        /* --- SKETCH UI THEME --- */
+        /* --- UI LAYOUT --- */
         #ui-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -92,7 +92,7 @@
         }
         #btn-help:active { transform: scale(0.95); }
 
-        /* RULES MODAL - DETAILED */
+        /* RULES MODAL */
         #rules-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.98);
@@ -224,10 +224,11 @@
 
         #tooltip {
             position: absolute; background: #000; border: 2px solid #fff; color: #fff;
-            padding: 10px; pointer-events: none; display: none; width: 220px; z-index: 30;
+            padding: 15px; pointer-events: none; display: none; width: 240px; z-index: 30;
             transform: translate(-50%, -140%);
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.3); font-family: 'Patrick Hand';
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.3); 
             text-align: center;
+            font-family: 'Gochi Hand', cursive;
         }
         
         .loader {
@@ -241,7 +242,7 @@
             h1 { font-size: 1.2rem; }
             .menu-card { padding: 20px; }
             button { padding: 10px 20px; font-size: 1rem; }
-            .stat-box { display: none; } /* Hide stats on tiny screens */
+            .stat-box { display: none; } 
             #log-container { top: auto; bottom: 80px; height: 100px; width: 180px; left: 10px; right: auto;}
             .rules-content { padding: 15px; }
             .rules-content h2 { font-size: 2rem; }
@@ -291,60 +292,56 @@
             
             <div class="rules-section">
                 <h3>1. The Story</h3>
-                <p><strong>Shristhi</strong> rented a villa in Goa for a chill squad trip. But someone found a "Vintage Typography" book and read the Latin placeholder text out loud. Now a <strong>Vibe Demon</strong> is haunting the villa.</p>
-                <p>You have until <strong>11:00 AM (Checkout Time)</strong> to banish it or the deposit is gone forever.</p>
+                <p><strong>Shristhi</strong> rented a villa in Goa. Someone read the fake Latin text in a design book. Now there's a <strong>Vibe Demon</strong>. Classic.</p>
+                <p>You have until <strong>11:00 AM (Checkout Time)</strong> to fix this.</p>
             </div>
 
             <div class="rules-section">
                 <h3>2. Your Secret Role</h3>
-                <p>At the start, you are assigned a role. <strong>Keep it secret!</strong></p>
                 <ul>
-                    <li><strong>THE SQUAD (Good):</strong> Most players are here. Your goal is to work together to fix the vibe.
-                        <br><em>Win Condition:</em> Play the 3 "Objective Cards" (Render, Client, Invoice) to the table.</li>
-                    <li><strong>THE TOURIST (Bad):</strong> One player is a chaos agent. They want the demon to stay.
-                        <br><em>Win Condition:</em> Sabotage the squad until the deck runs out, OR play the 3 "Cursed Cards" (Comic Sans, Unpaid, Corrupt).</li>
+                    <li><strong>THE SQUAD (Good):</strong> Find the 3 Win Cards (Render, Client, Invoice).
+                        <br><em>Vibe Check:</em> "We just want to get paid."</li>
+                    <li><strong>THE TOURIST (Bad):</strong> Sabotage the squad. Let the deck run out OR play the 3 Cursed Cards.
+                        <br><em>Vibe Check:</em> "Does this villa have a subwoofer?"</li>
                 </ul>
             </div>
 
             <div class="rules-section">
                 <h3>3. Turn Overview</h3>
-                <p>On your turn, you MUST do the following:</p>
                 <ol>
-                    <li><strong>DRAW:</strong> Tap the deck (Left side) to take 1 card.</li>
-                    <li><strong>PLAY or DISCARD:</strong> Tap a card in your hand to play it to the center. If you don't want to use it, you effectively "discard" it to the pile, but its effect still happens!</li>
+                    <li><strong>DRAW:</strong> Tap the deck (Left side).</li>
+                    <li><strong>PLAY/DISCARD:</strong> Tap a card in your hand. Effects ALWAYS happen, even if you just wanted to get rid of it.</li>
                 </ol>
-                <p><em>Tip: Watch what people play. If someone keeps discarding good cards, they might be the Tourist!</em></p>
             </div>
 
             <div class="rules-section">
                 <h3>4. Card Types</h3>
                 <div class="card-type-box">
-                    <span class="ct-icon">🎨</span>
-                    <div><strong>Action (Blue):</strong> Standard events. Skip turns, trade hands, or force reveals. Use these to find out who is who.</div>
+                    <span class="ct-icon">👀</span>
+                    <div><strong>Action (Blue):</strong> Mess with people. Look at hands, swap cards.</div>
                 </div>
                 <div class="card-type-box">
-                    <span class="ct-icon">🪳</span>
-                    <div><strong>Chaos (Pink):</strong> Real-life challenges! "Stand up", "High Five", or "Don't Blink". If you fail, you must discard a card.</div>
+                    <span class="ct-icon">✨</span>
+                    <div><strong>Chaos (Pink):</strong> Physical challenges! "Stand up", "High Five".</div>
                 </div>
                 <div class="card-type-box">
                     <span class="ct-icon">💾</span>
-                    <div><strong>Objective (Yellow):</strong> The Good Cards. <strong>Final_Render.ai, Client Approval, Invoice Paid</strong>. Collect all 3 in the discard pile to WIN.</div>
+                    <div><strong>Objective (Yellow):</strong> The Good Stuff. Collect all 3 to WIN.</div>
                 </div>
                 <div class="card-type-box">
                     <span class="ct-icon">💀</span>
-                    <div><strong>Cursed (Red):</strong> The Bad Cards. <strong>Comic Sans, Unpaid Work, Corrupted File</strong>. If these 3 hit the pile, the Tourist WINS.</div>
+                    <div><strong>Cursed (Red):</strong> The Bad Stuff. Don't let these hit the table.</div>
                 </div>
             </div>
-
-            <p style="text-align:center; font-weight:bold; margin-top:30px; font-size:1.4rem;">Tap 'X CLOSE' to start playing!</p>
         </div>
     </div>
 
     <!-- Tooltip -->
     <div id="tooltip">
-        <h3 id="tt-title" style="margin:0; font-family:'Gloria Hallelujah'; color:#ffff00">Title</h3>
-        <p id="tt-type" style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-top:2px; border-bottom: 1px solid #555;">Type</p>
-        <p id="tt-desc" style="margin-bottom:0; font-size: 1.1rem; margin-top: 5px;">Desc</p>
+        <h3 id="tt-title" style="margin:0; font-family:'Gloria Hallelujah'; font-size:1.4rem; color:#ffff00; text-shadow: 2px 2px 0 #000;">Title</h3>
+        <p id="tt-type" style="font-size: 0.9rem; text-transform: uppercase; font-weight:bold; color: #ddd; margin-top:2px; border-bottom: 1px dashed #fff;">Type</p>
+        <p id="tt-desc" style="margin-bottom:0; font-size: 1.2rem; margin-top: 5px; line-height:1.2;">Desc</p>
+        <p id="tt-flavor" style="margin-top:8px; font-size: 0.9rem; font-style:italic; color:#aaa;">"Flavor text"</p>
     </div>
 
     <!-- Turn Splash -->
@@ -702,28 +699,28 @@
 
 
         // --- GAME ASSETS & CONSTANTS ---
-        // UPDATED: Now includes ALL required win condition cards
+        // UPDATED: Now includes ALL required win condition cards with JOKES!
         window.CARDS_DB = [
-            { id: 'logo', title: 'Make Logo Bigger', type: 'Design', icon: 'eye', desc: 'Reveal a hand.' },
-            { id: 'traffic', title: 'Goa Traffic', type: 'Action', icon: 'spiral', desc: 'Skip next player.' },
-            { id: 'feni', title: 'Spilled Feni', type: 'Action', icon: 'spill', desc: 'Left player discards 2.' },
-            { id: 'pool', title: 'Pool Party', type: 'Action', icon: 'wave', desc: 'Pass hands left.' },
-            { id: 'roach', title: 'Bathroom Roach', type: 'Chaos', icon: 'bug', desc: 'Stand up last!' },
-            { id: 'scooty', title: 'Scooty Crash', type: 'Chaos', icon: 'scooter', desc: 'High five or discard.' },
-            { id: 'golden', title: 'Golden Hour', type: 'Chaos', icon: 'star', desc: 'Strike a pose.' },
+            { id: 'logo', title: 'Make Logo Bigger', type: 'Design', icon: '🧐', desc: 'Target player must reveal their hand.', flavor: '"Can you make it pop? But like, tastefully?"' },
+            { id: 'traffic', title: 'Goa Traffic', type: 'Action', icon: '🐄', desc: 'Skip next player\'s turn.', flavor: 'Stuck behind a cow on the bridge. 2 hours late.' },
+            { id: 'feni', title: 'Spilled Feni', type: 'Action', icon: '🍹', desc: 'Player to left discards 2 cards.', flavor: '"Oops! My bad! Also, that was expensive."' },
+            { id: 'pool', title: 'Pool Party', type: 'Action', icon: '🏖️', desc: 'All players pass their hands to the left.', flavor: 'Canonball! Your phone was in your pocket.' },
+            { id: 'roach', title: 'Bathroom Roach', type: 'Chaos', icon: '🪳', desc: 'Everyone stand up! Last one up draws 2.', flavor: 'It can fly. IT CAN FLY!' },
+            { id: 'scooty', title: 'Scooty Crash', type: 'Chaos', icon: '🛵', desc: 'High-five player across or discard 1.', flavor: 'You scratched the rental. Bye bye deposit.' },
+            { id: 'golden', title: 'Golden Hour', type: 'Chaos', icon: '✨', desc: 'Strike a pose. Worst vibe draws 1.', flavor: 'If you didn\'t story it, did it even happen?' },
             
             // BAD CARDS (Tourist Wins)
-            { id: 'comic', title: 'Comic Sans', type: 'Cursed', icon: 'skull', desc: 'Cursed Item 1/3' },
-            { id: 'unpaid', title: 'Unpaid Work', type: 'Cursed', icon: 'sadface', desc: 'Cursed Item 2/3' },
-            { id: 'corrupt', title: 'Corrupted File', type: 'Cursed', icon: 'glitch', desc: 'Cursed Item 3/3' },
+            { id: 'comic', title: 'Comic Sans', type: 'Cursed', icon: '🤡', desc: 'Cursed Item 1/3', flavor: 'The font of true evil.' },
+            { id: 'unpaid', title: 'Unpaid Work', type: 'Cursed', icon: '💸', desc: 'Cursed Item 2/3', flavor: '"It\'s great exposure for your portfolio!"' },
+            { id: 'corrupt', title: 'Corrupted File', type: 'Cursed', icon: '💀', desc: 'Cursed Item 3/3', flavor: 'Error 404: Will to live not found.' },
 
             // GOOD CARDS (Squad Wins)
-            { id: 'render', title: 'Final_Render.ai', type: 'Win', icon: 'floppy', desc: 'Objective 1/3' },
-            { id: 'client', title: 'Client Approval', type: 'Win', icon: 'check', desc: 'Objective 2/3' },
-            { id: 'invoice', title: 'Invoice Paid', type: 'Win', icon: 'money', desc: 'Objective 3/3' },
+            { id: 'render', title: 'Final_Render.ai', type: 'Win', icon: '💾', desc: 'Objective 1/3', flavor: 'Filename: Final_Final_v2_REAL.ai' },
+            { id: 'client', title: 'Client Approval', type: 'Win', icon: '👍', desc: 'Objective 2/3', flavor: '"Actually, I love it. No changes."' },
+            { id: 'invoice', title: 'Invoice Paid', type: 'Win', icon: '💰', desc: 'Objective 3/3', flavor: 'The most beautiful notification in the world.' },
             
             // EXTRA
-            { id: 'wifi', title: 'Spotty WiFi', type: 'Action', icon: 'wifi', desc: 'Reveal hand till turn.' }
+            { id: 'wifi', title: 'Spotty WiFi', type: 'Action', icon: '📶', desc: 'Target plays with hand revealed.', flavor: 'Buffer... Buffer... Buffer...' }
         ];
 
         // --- DRAWING HELPERS FOR CARDS ---
@@ -732,48 +729,6 @@
             sketchLine(ctx, x+w, y, x+w, y+h);
             sketchLine(ctx, x+w, y+h, x, y+h);
             sketchLine(ctx, x, y+h, x, y);
-        }
-
-        function drawIcon(ctx, type, x, y, size) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#000';
-
-            if(type === 'eye') {
-                ctx.beginPath(); ctx.ellipse(0, 0, size/2, size/3, 0, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.arc(0, 0, size/6, 0, Math.PI*2); ctx.fill();
-            } else if (type === 'skull') {
-                ctx.beginPath(); ctx.arc(0, -5, size/3, 0, Math.PI*2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(-10, 20); ctx.lineTo(10, 20); ctx.stroke();
-                ctx.fillStyle='#000';
-                ctx.beginPath(); ctx.arc(-10, -5, 5, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(10, -5, 5, 0, Math.PI*2); ctx.fill();
-            } else if (type === 'star') {
-                ctx.beginPath();
-                for(let i=0; i<5; i++) {
-                    ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*size/2, -Math.sin((18+i*72)/180*Math.PI)*size/2);
-                    ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*size/4, -Math.sin((54+i*72)/180*Math.PI)*size/4);
-                }
-                ctx.closePath(); ctx.stroke();
-            } else if (type === 'spiral') {
-                ctx.beginPath();
-                for(let i=0; i<50; i++) {
-                    const angle = 0.5 * i; const r = 1 + 1 * i;
-                    ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
-                }
-                ctx.stroke();
-            } else if (type === 'check') {
-                ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-5, 20); ctx.lineTo(30, -20); ctx.stroke();
-            } else if (type === 'floppy') {
-                ctx.strokeRect(-20, -20, 40, 40); ctx.fillRect(-10, -20, 20, 15);
-            } else {
-                ctx.beginPath(); ctx.arc(0,0,size/3, 0, Math.PI*2); ctx.stroke();
-                ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText("?", 0, 0);
-            }
-            ctx.restore();
         }
 
         function createCardTexture(data) {
@@ -790,15 +745,64 @@
             ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
             drawSketchRect(ctx, 20, 20, 216, 200);
 
-            drawIcon(ctx, data.icon, 128, 120, 100);
+            // EMOJI ICON RENDERER
+            ctx.textAlign = 'center'; 
+            ctx.textBaseline = 'middle'; 
+            ctx.font = '80px Arial'; 
+            ctx.fillText(data.icon, 128, 110);
 
+            // Cute doodles around icon
+            ctx.font = '20px Arial';
+            ctx.fillText("✨", 80, 80);
+            ctx.fillText("✨", 176, 140);
+            ctx.fillStyle = '#ff69b4'; // Pink hearts
+            ctx.fillText("♥", 160, 80);
+            ctx.fillStyle = '#000';
+
+            // Title
             ctx.fillStyle = '#000'; ctx.textAlign = 'center';
-            ctx.font = 'bold 22px Arial'; ctx.fillText(data.title.toUpperCase(), 128, 260);
-            ctx.font = 'italic 16px Arial'; ctx.fillText(data.type, 128, 290);
+            ctx.font = 'bold 22px "Patrick Hand", cursive'; 
+            ctx.fillText(data.title.toUpperCase(), 128, 200);
+            
+            // Type
+            ctx.font = 'italic 16px "Patrick Hand"'; 
+            ctx.fillStyle = '#666';
+            ctx.fillText(data.type, 128, 225);
 
+            // Flavor Text Box
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(30, 240, 196, 80);
+            ctx.strokeRect(30, 240, 196, 80);
+            
+            ctx.fillStyle = '#000';
+            ctx.font = '14px "Gloria Hallelujah"';
+            wrapText(ctx, data.flavor, 128, 260, 180, 18);
+
+            // Corner Stars
             ctx.font = 'bold 20px Arial'; ctx.fillText("★", 30, 45); ctx.fillText("★", 226, 330);
 
             return new THREE.CanvasTexture(c);
+        }
+        
+        // Helper to wrap text on canvas
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            if(!text) return;
+            var words = text.split(' ');
+            var line = '';
+            for(var n = 0; n < words.length; n++) {
+              var testLine = line + words[n] + ' ';
+              var metrics = ctx.measureText(testLine);
+              var testWidth = metrics.width;
+              if (testWidth > maxWidth && n > 0) {
+                ctx.fillText(line, x, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+              }
+              else {
+                line = testLine;
+              }
+            }
+            ctx.fillText(line, x, y);
         }
 
         function createBackTexture() {
@@ -820,6 +824,14 @@
             
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
             drawSketchRect(ctx, 10, 10, 236, 336);
+            
+            // Logo on back
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.font = '20px "Gloria Hallelujah"';
+            ctx.fillText("GOA", 128, 160);
+            ctx.fillText("PANIC", 128, 190);
+
             return new THREE.CanvasTexture(c);
         }
 
@@ -1018,6 +1030,7 @@
                     document.getElementById('tt-title').innerText = data.title;
                     document.getElementById('tt-type').innerText = data.type;
                     document.getElementById('tt-desc').innerText = data.desc || "Action";
+                    document.getElementById('tt-flavor').innerText = data.flavor || "";
                 }
             } else {
                 tt.style.display = 'none';
