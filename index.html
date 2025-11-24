@@ -2,1078 +2,676 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shristhi's Goa Panic - Cute Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Death by Design: Pixel Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        /* HANDWRITTEN FONTS */
-        @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Patrick+Hand&family=Gochi+Hand&display=swap');
-
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #ffffff;
-            font-family: 'Patrick Hand', cursive;
-            color: #000;
-            user-select: none;
-            touch-action: none; /* Prevent scroll on mobile */
-        }
-
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-        }
-
-        /* PROCEDURAL BACKGROUND ART LAYER */
-        #sketch-background {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
-            pointer-events: none;
-            opacity: 0.15; /* Subtle sketchbook look */
-        }
-
-        /* --- UI LAYOUT --- */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 20;
-            pointer-events: none;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-
-        .hud-top {
-            display: flex; justify-content: space-between; padding: 15px;
-            pointer-events: auto;
-        }
-
-        .hud-bottom {
-            padding: 15px; text-align: center;
-            background: rgba(255,255,255,0.95);
-            border-top: 3px solid #000;
-            pointer-events: auto;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            font-family: 'Gloria Hallelujah', cursive;
-            color: #000;
-            margin: 0;
-            font-size: 1.8rem;
-            transform: rotate(-1deg);
-            background: #fff;
-            padding: 5px 10px;
-            border: 2px solid #000;
-            display: inline-block;
-        }
-
-        .stat-box {
-            background: #000;
-            color: #fff;
-            padding: 10px 15px;
-            border-radius: 2px;
-            border: 2px solid #000;
-            box-shadow: 3px 3px 0px #888;
-            text-align: right;
-            font-size: 1rem;
-            transform: rotate(1deg);
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #202020; 
+            font-family: 'VT323', monospace; 
         }
         
-        #btn-help {
-            background: #fff; border: 2px solid #000; font-family: 'Gloria Hallelujah';
-            font-size: 1.5rem; cursor: pointer; width: 50px; height: 50px;
-            border-radius: 50%;
-            box-shadow: 3px 3px 0 #000; transition: transform 0.1s;
-            margin-right: 15px;
-            display: flex; align-items: center; justify-content: center;
+        /* The Game Canvas - Low Res Scaled Up */
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated; /* Essential for pixel art look */
         }
-        #btn-help:active { transform: scale(0.95); }
 
-        /* RULES MODAL */
-        #rules-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.98);
-            z-index: 200;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            padding-top: 20px;
-            overflow-y: auto;
-            pointer-events: auto;
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .pointer-events-auto { pointer-events: auto; }
+        
+        /* Pixel Art UI Styling */
+        .pixel-border { 
+            border: 4px solid white; 
+            box-shadow: 4px 4px 0px black; 
+            background: #2a2a2a; 
+            color: white;
         }
         
-        .rules-content {
-            max-width: 650px; width: 90%;
-            background: #fff; 
-            border: 4px solid #000; 
-            padding: 30px;
-            box-shadow: 15px 15px 0 #000;
-            margin-bottom: 50px;
-            position: relative;
+        .btn { 
+            background: #ff3366; color: white; border: 2px solid white; padding: 10px 20px; 
+            cursor: pointer; transition: transform 0.1s; font-size: 1.5rem; text-transform: uppercase;
+            letter-spacing: 2px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 0px black;
         }
-
-        .rules-content h2 { 
-            font-family: 'Gloria Hallelujah'; font-size: 2.5rem; 
-            border-bottom: 3px dashed #000; margin-top: 0; 
-            text-align: center; padding-bottom: 10px;
-        }
+        .btn:hover { transform: translate(-2px, -2px); background: #ff5588; }
+        .btn:active { transform: translate(0, 0); box-shadow: none; }
         
-        .rules-section {
-            margin-bottom: 30px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 20px;
+        .dialogue-box {
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid white;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
         }
 
-        .rules-section h3 { 
-            font-family: 'Gloria Hallelujah'; font-size: 1.6rem; 
-            margin-bottom: 10px; color: #000; 
-            background: #ffff00; display: inline-block; padding: 2px 5px;
-            transform: rotate(-1deg);
-            border: 1px solid #000;
-        }
-        
-        .rules-section p { font-size: 1.2rem; line-height: 1.5; margin-bottom: 10px; }
-        .rules-section ul { font-size: 1.2rem; line-height: 1.5; padding-left: 20px; }
-        .rules-section li { margin-bottom: 8px; }
-        
-        .card-type-box {
-            border: 2px solid #000; padding: 10px; margin: 10px 0;
-            display: flex; align-items: center;
-        }
-        .ct-icon { font-size: 1.5rem; margin-right: 15px; width: 40px; text-align: center;}
-
-        .close-rules {
-            position: sticky; top: 10px; align-self: flex-end;
-            background: #000; color: #fff; border: none;
-            font-family: 'Gloria Hallelujah'; font-size: 1.2rem; padding: 10px 20px;
-            cursor: pointer; margin-bottom: -40px; margin-right: 10px; z-index: 210;
+        /* CRT Scanline effect overlay */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px; z-index: 50;
         }
 
-        /* LOGS */
-        #log-container {
-            position: absolute; top: 90px; right: 10px;
-            width: 220px; height: 180px;
-            overflow-y: auto;
-            background: #fff;
-            border: 3px solid #000;
-            padding: 10px;
-            font-size: 0.95rem;
-            pointer-events: auto;
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
-            opacity: 0.95;
-        }
-
-        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 2px; color: #000; }
-
-        /* SCREENS */
-        .screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #fff;
-            z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: auto;
-        }
-
-        .menu-card {
-            background: #fff;
-            padding: 30px;
-            border: 5px solid #000;
-            box-shadow: 10px 10px 0px #000;
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-            position: relative;
-        }
-        
         .hidden { display: none !important; }
-
-        input {
-            padding: 10px; font-size: 1.2rem; margin: 10px; width: 80%;
-            border: 3px solid #000; background: #eee; color: #000;
-            font-family: 'Gloria Hallelujah'; text-align: center;
-            outline: none; box-shadow: 4px 4px 0 #000;
-        }
-
-        button {
-            background: #000; color: white; border: none;
-            padding: 15px 30px; font-size: 1.2rem;
-            font-family: 'Gloria Hallelujah', cursive;
-            cursor: pointer; margin: 10px;
-            border: 2px solid #000;
-            transition: transform 0.1s;
-        }
-        button:hover { transform: scale(1.05) rotate(-1deg); background: #333; }
-        button:disabled { background: #999; border-color: #999; cursor: not-allowed; }
-
-        .player-list { margin: 15px auto; border: 3px solid #000; padding: 10px; width: 90%; background: #fff;}
-        .player-item { padding: 5px; border-bottom: 1px dashed #000; font-size: 1.1rem; }
-
-        #turn-indicator {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4rem;
-            font-family: 'Gloria Hallelujah', cursive;
-            color: #000;
-            text-shadow: 3px 3px 0px #fff;
-            -webkit-text-stroke: 2px white;
-            opacity: 0; pointer-events: none; z-index: 50;
-            white-space: nowrap;
-            text-align: center;
-        }
-
-        #tooltip {
-            position: absolute; background: #000; border: 2px solid #fff; color: #fff;
-            padding: 15px; pointer-events: none; display: none; width: 240px; z-index: 30;
-            transform: translate(-50%, -140%);
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.3); 
-            text-align: center;
-            font-family: 'Gochi Hand', cursive;
-        }
-        
-        .loader {
-            border: 6px solid #f3f3f3; border-top: 6px solid #000; border-radius: 50%;
-            width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 0 auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Mobile Adjustments */
-        @media (max-width: 600px) {
-            h1 { font-size: 1.2rem; }
-            .menu-card { padding: 20px; }
-            button { padding: 10px 20px; font-size: 1rem; }
-            .stat-box { display: none; } 
-            #log-container { top: auto; bottom: 80px; height: 100px; width: 180px; left: 10px; right: auto;}
-            .rules-content { padding: 15px; }
-            .rules-content h2 { font-size: 2rem; }
-        }
-
     </style>
-    
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 <body>
 
-    <!-- Background Art Layer -->
-    <canvas id="sketch-background"></canvas>
+    <!-- 2D Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- CRT Effect -->
+    <div class="scanlines"></div>
 
     <!-- UI Layer -->
-    <div id="ui-layer">
-        <div class="hud-top">
-            <div style="display:flex; align-items:center;">
-                <button id="btn-help" onclick="toggleRules(true)">?</button>
-                <div>
-                    <h1>Goa Panic</h1>
-                    <div id="room-code-display" style="display:none; font-size:1rem; font-weight:bold; margin-left:5px;">ROOM: ????</div>
-                </div>
+    <div id="ui-layer" class="z-10 p-4 md:p-8">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-start w-full pointer-events-auto">
+            <div class="pixel-border p-4">
+                <h1 class="text-4xl leading-none text-yellow-400 drop-shadow-md">DEATH BY DESIGN</h1>
+                <p class="text-lg text-gray-300">PIXEL EDITION • GOA</p>
             </div>
-            <div class="stat-box" id="game-stats" style="display:none">
-                <div>YOU: <span id="role-display" style="color:#ffff00; font-weight:bold;">???</span></div>
-            </div>
+            <button onclick="toggleRulebook()" class="btn text-xl">📒 RULES</button>
         </div>
 
-        <div id="log-container" style="display:none"></div>
+        <!-- Notification Area -->
+        <div id="notification" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900 text-white p-6 border-4 border-white shadow-2xl text-center z-50 pointer-events-auto max-w-md w-full">
+            <h2 id="notif-title" class="text-3xl mb-2 text-yellow-300"></h2>
+            <p id="notif-body" class="mb-6 text-xl leading-relaxed"></p>
+            <button onclick="closeNotification()" class="btn w-full">CONTINUE</button>
+        </div>
 
-        <div class="hud-bottom">
-            <div id="instruction-text" style="font-weight: 700; opacity:0; font-size: 1.2rem;">Loading...</div>
+        <!-- Interaction Prompt -->
+        <div id="interaction-prompt" class="hidden absolute top-2/3 left-1/2 transform -translate-x-1/2 bg-black text-white border-2 border-white px-4 py-2 pointer-events-auto shadow-lg text-xl">
+            Click to Inspect
+        </div>
+
+        <!-- Dialogue/Story Box (Bottom) -->
+        <div id="dialogue-container" class="w-full max-w-4xl mx-auto mb-4 pointer-events-auto hidden">
+            <div class="dialogue-box p-6 flex flex-col md:flex-row gap-4 items-start text-white">
+                <div class="w-full md:w-3/4">
+                    <h3 id="speaker-name" class="text-2xl text-yellow-400 mb-2 uppercase border-b-2 border-gray-600 inline-block">UNKNOWN</h3>
+                    <p id="dialogue-text" class="text-2xl leading-relaxed mb-4">...</p>
+                    
+                    <!-- Choices -->
+                    <div id="choices-area" class="grid grid-cols-1 gap-2">
+                        <!-- Buttons injected via JS -->
+                    </div>
+                </div>
+                <div class="w-full md:w-1/4 flex flex-col gap-2 border-l-2 border-gray-600 pl-4">
+                    <div class="text-sm text-gray-400 uppercase">Suspects</div>
+                    <div id="suspect-count" class="text-5xl text-red-400">9</div>
+                    <div class="text-sm text-gray-400 uppercase mt-2">Clues</div>
+                    <div id="clue-count" class="text-5xl text-cyan-400">0/5</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- RULES MODAL -->
-    <div id="rules-modal" class="hidden">
-        <div style="width: 100%; max-width: 650px; display: flex; justify-content: flex-end; padding-right: 20px;">
-             <button class="close-rules" onclick="toggleRules(false)">X CLOSE</button>
-        </div>
-       
-        <div class="rules-content">
-            <h2>The Villa Survival Guide</h2>
+    <!-- Start Screen -->
+    <div id="start-screen" class="fixed inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center p-4 pointer-events-auto">
+        <div class="max-w-2xl w-full border-4 border-white p-8 bg-gray-800 text-white text-center">
+            <h1 class="text-8xl mb-4 text-yellow-400" style="text-shadow: 4px 4px #ff3366;">DEATH BY DESIGN</h1>
+            <p class="text-2xl mb-8 text-cyan-300">8-BIT MURDER MYSTERY</p>
             
-            <div class="rules-section">
-                <h3>1. The Story</h3>
-                <p><strong>Shristhi</strong> rented a villa in Goa. Someone read the fake Latin text in a design book. Now there's a <strong>Vibe Demon</strong>. Classic.</p>
-                <p>You have until <strong>11:00 AM (Checkout Time)</strong> to fix this.</p>
+            <div class="text-left bg-black p-4 border-2 border-gray-600 mb-8 text-lg space-y-2 font-mono text-green-400">
+                <p>> CRIME: MURDER</p>
+                <p>> VICTIM: MR. CRITICUS</p>
+                <p>> LOCATION: SWITCH & ROY STUDIO</p>
+                <p>> STATUS: UNRESOLVED</p>
             </div>
 
-            <div class="rules-section">
-                <h3>2. Your Secret Role</h3>
-                <ul>
-                    <li><strong>THE SQUAD (Good):</strong> Find the 3 Win Cards (Render, Client, Invoice).
-                        <br><em>Vibe Check:</em> "We just want to get paid."</li>
-                    <li><strong>THE TOURIST (Bad):</strong> Sabotage the squad. Let the deck run out OR play the 3 Cursed Cards.
-                        <br><em>Vibe Check:</em> "Does this villa have a subwoofer?"</li>
-                </ul>
-            </div>
-
-            <div class="rules-section">
-                <h3>3. Turn Overview</h3>
-                <ol>
-                    <li><strong>DRAW:</strong> Tap the deck (Left side).</li>
-                    <li><strong>PLAY/DISCARD:</strong> Tap a card in your hand. Effects ALWAYS happen, even if you just wanted to get rid of it.</li>
-                </ol>
-            </div>
-
-            <div class="rules-section">
-                <h3>4. Card Types</h3>
-                <div class="card-type-box">
-                    <span class="ct-icon">👀</span>
-                    <div><strong>Action (Blue):</strong> Mess with people. Look at hands, swap cards.</div>
-                </div>
-                <div class="card-type-box">
-                    <span class="ct-icon">✨</span>
-                    <div><strong>Chaos (Pink):</strong> Physical challenges! "Stand up", "High Five".</div>
-                </div>
-                <div class="card-type-box">
-                    <span class="ct-icon">💾</span>
-                    <div><strong>Objective (Yellow):</strong> The Good Stuff. Collect all 3 to WIN.</div>
-                </div>
-                <div class="card-type-box">
-                    <span class="ct-icon">💀</span>
-                    <div><strong>Cursed (Red):</strong> The Bad Stuff. Don't let these hit the table.</div>
-                </div>
-            </div>
+            <button onclick="startGame()" class="btn text-3xl w-full py-4 animate-pulse">START STORY</button>
         </div>
     </div>
 
-    <!-- Tooltip -->
-    <div id="tooltip">
-        <h3 id="tt-title" style="margin:0; font-family:'Gloria Hallelujah'; font-size:1.4rem; color:#ffff00; text-shadow: 2px 2px 0 #000;">Title</h3>
-        <p id="tt-type" style="font-size: 0.9rem; text-transform: uppercase; font-weight:bold; color: #ddd; margin-top:2px; border-bottom: 1px dashed #fff;">Type</p>
-        <p id="tt-desc" style="margin-bottom:0; font-size: 1.2rem; margin-top: 5px; line-height:1.2;">Desc</p>
-        <p id="tt-flavor" style="margin-top:8px; font-size: 0.9rem; font-style:italic; color:#aaa;">"Flavor text"</p>
-    </div>
-
-    <!-- Turn Splash -->
-    <div id="turn-indicator">YOUR TURN</div>
-
-    <!-- MAIN MENU SCREEN -->
-    <div id="start-screen" class="screen">
-        <div class="menu-card">
-            <h1 style="font-size: 3.5rem; line-height: 0.9;">Shristhi's<br><span style="font-size: 2.5rem; background: #000; color: #fff; padding: 0 10px;">Goa Panic</span></h1>
-            <div style="font-family: 'Patrick Hand'; color: #000; margin: 20px 0; font-size: 1.2rem;">"Sketchy Edition"</div>
-            <div id="auth-status">Connecting... <div class="loader" style="width:20px; height:20px; border-width:3px; display:inline-block; vertical-align:middle;"></div></div>
+    <!-- Rulebook Modal -->
+    <div id="rulebook-modal" class="hidden fixed inset-0 z-[60] bg-black bg-opacity-90 flex items-center justify-center p-4 pointer-events-auto">
+        <div class="bg-gray-800 text-white max-w-lg w-full border-4 border-white p-6 relative shadow-2xl">
+            <button onclick="toggleRulebook()" class="absolute top-2 right-2 text-3xl hover:text-red-500">&times;</button>
+            <h2 class="text-4xl mb-4 text-yellow-400 border-b-4 border-white inline-block">RULE BOOK</h2>
             
-            <input type="text" id="p-name" placeholder="YOUR NAME" maxlength="10">
-            
-            <div style="display:flex; justify-content:center; flex-wrap:wrap; margin-top: 20px;">
-                <button id="btn-host" onclick="createGame()" disabled>HOST</button>
-                <div style="display:flex; flex-direction:column; align-items: center;">
-                    <input type="text" id="room-code" placeholder="CODE" style="width: 80px; margin-bottom: 5px; padding: 10px;">
-                    <button id="btn-join" onclick="joinGame()" style="margin:0; padding: 12px 20px;" disabled>JOIN</button>
+            <div class="space-y-6 text-xl">
+                <div class="p-2">
+                    <h3 class="text-cyan-400 mb-1">> THE GOAL</h3>
+                    <p>Work together. Point and Click to explore the studio. Read everything out loud.</p>
+                </div>
+
+                <div class="p-2 border-l-4 border-pink-500 bg-gray-900">
+                    <h3 class="text-pink-500 mb-1">> DRINKING RULES 🍻</h3>
+                    <ul class="list-disc list-inside text-lg text-gray-300">
+                        <li>Drink if someone says "Make it bigger".</li>
+                        <li>Drink if a clue mentions "Comic Sans".</li>
+                        <li>Drink if you find a Red Herring.</li>
+                        <li>Finish drink if you accuse the WRONG person.</li>
+                    </ul>
                 </div>
             </div>
-            <br>
-            <button onclick="toggleRules(true)" style="font-size:1rem; padding: 10px 20px; background: #fff; color:#000;">📖 Read Rules</button>
         </div>
     </div>
 
-    <!-- LOBBY SCREEN -->
-    <div id="lobby-screen" class="screen hidden">
-        <div class="menu-card">
-            <h1>Room: <span id="lobby-code" style="text-decoration: underline;"></span></h1>
-            <div class="player-list" id="lobby-list"></div>
-            <p style="color: #666;">Waiting for the squad...</p>
-            <button id="btn-start" onclick="startGameAction()" class="hidden">START!</button>
-            <br>
-            <button onclick="toggleRules(true)" style="font-size:1rem; padding: 5px 10px; background: #fff; color:#000; margin-top:10px;">How To Play</button>
-            <div id="wait-msg" style="margin-top:20px; font-weight:bold;">Waiting for Host...</div>
-        </div>
-    </div>
-
-    <!-- 3D Container -->
-    <div id="game-container"></div>
-
-    <!-- MAIN LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- FIREBASE CONFIG (USER PROVIDED) ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDoDLqcnKoG7dJHIoAJ3Xgl4AnaLhy5Cnw",
-            authDomain: "shrish-d0483.firebaseapp.com",
-            projectId: "shrish-d0483",
-            storageBucket: "shrish-d0483.firebasestorage.app",
-            messagingSenderId: "11385598076",
-            appId: "1:11385598076:web:b4805458dae031173619f9",
-            measurementId: "G-SMQLWW0KL5"
+    <script>
+        // --- GAME CONFIGURATION ---
+        const CANVAS_WIDTH = 400; // Internal Low Res Width
+        const CANVAS_HEIGHT = 300; // Internal Low Res Height
+        
+        const state = {
+            cluesFound: 0,
+            totalClues: 5,
+            gameActive: false,
+            currentPhase: 'story', // story, investigation, accusation, end
+            storyIndex: 0,
+            evidence: [],
+            suspects: [
+                { id: 'shristhi', name: 'Shristhi', role: 'Graphic Designer', color: '#FF69B4', alibi: "I was manually kerning a headline. Do you know how long that takes?", suspicious: "She's holding an X-Acto knife very tightly." },
+                { id: 'taher', name: 'Taher', role: 'Illustrator', color: '#32CD32', alibi: "I was washing my brushes. Do you know how hard Indian Ink is to remove?", suspicious: "His hands are stained black. Is that ink... or dried blood?" },
+                { id: 'tejas', name: 'Tejas', role: 'Writer/Filmmaker', color: '#A9A9A9', alibi: "I was writing a plot twist for the brand film script.", suspicious: "He's looking at the body like it's a scene composition." },
+                { id: 'swikriti', name: 'Swikriti', role: 'Motion Graphics', color: '#9370DB', alibi: "I was tweaking the graph editor. One wrong click and the animation breaks.", suspicious: "Her hands are twitching like she's spamming Ctrl+Z." },
+                { id: 'namya', name: 'Namya', role: 'UI/UX Designer', color: '#00BFFF', alibi: "I was wireframing a user flow. The user died at step 3. Metaphorically.", suspicious: "She said the victim had 'terrible affordance'." },
+                { id: 'isha', name: 'Isha', role: 'Graphic Designer', color: '#FFA500', alibi: "I was vectorizing a pixelated logo the client sent in a Word doc.", suspicious: "She looks ready to delete someone's layer." },
+                { id: 'kush', name: 'Kush', role: 'Game Designer', color: '#DC143C', alibi: "I was debugging a collision mesh in the level editor.", suspicious: "He keeps mumbling about 'hitboxes'." },
+                { id: 'upasana', name: 'Upasana', role: 'Founder', color: '#FFD700', alibi: "I was calculating our taxes. Scarier than murder.", suspicious: "The victim gave Switch a bad review." },
+                { id: 'roy', name: 'Roy', role: 'Founder', color: '#C0C0C0', alibi: "I was fixing the WiFi router. Again.", suspicious: "Was heard yelling 'No more changes!' earlier." }
+            ]
         };
 
-        // Globals
-        window.db = null;
-        window.auth = null;
-        window.user = null;
-        window.gameId = null;
-        window.appId = "shristhi-goa-panic"; 
-
-        // Init
-        try {
-            const app = initializeApp(firebaseConfig);
-            window.auth = getAuth(app);
-            window.db = getFirestore(app);
-            
-            signInAnonymously(window.auth).then(() => {
-                console.log("Anon Auth Success");
-            }).catch(e => console.error(e));
-
-            onAuthStateChanged(window.auth, (u) => {
-                if(u) {
-                    window.user = u;
-                    const statusEl = document.getElementById('auth-status');
-                    statusEl.innerText = "Online";
-                    statusEl.style.color = "green";
-                    enableButtons();
-                }
-            });
-        } catch(e) {
-            console.error("Firebase Init Error", e);
-        }
-
-        // --- GAME ACTIONS ---
-
-        window.createGame = async function() {
-            if(!window.user) return;
-            const nameInput = document.getElementById('p-name').value || "SHRISTHI";
-            const name = nameInput.toUpperCase().substring(0, 10);
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            window.gameId = code;
-
-            const initialData = {
-                hostId: window.user.uid,
-                status: 'lobby',
-                paranoia: 0,
-                turnIndex: 0,
-                players: [{ uid: window.user.uid, name: name, role: 'Host', hand: [], seat: 0 }],
-                deck: [], discard: [], logs: ["Lobby Created."]
-            };
-
-            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code), initialData);
-            enterLobby(code);
-        }
-
-        window.joinGame = async function() {
-            if(!window.user) return;
-            const nameInput = document.getElementById('p-name').value || "FRIEND";
-            const name = nameInput.toUpperCase().substring(0, 10);
-            const code = document.getElementById('room-code').value.toUpperCase();
-            if(!code) return alert("Need a Code!");
-            window.gameId = code;
-
-            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code);
-            const snap = await getDoc(gameRef);
-
-            if(snap.exists()) {
-                const data = snap.data();
-                if(data.status !== 'lobby') return alert("Game already started!");
-                
-                const newPlayer = { uid: window.user.uid, name: name, role: 'Guest', hand: [], seat: data.players.length };
-                
-                // Avoid dupes
-                const exists = data.players.find(p => p.uid === window.user.uid);
-                if(!exists) {
-                    await updateDoc(gameRef, { players: arrayUnion(newPlayer) });
-                }
-                enterLobby(code);
-            } else {
-                alert("Room not found!");
+        // --- NARRATIVE DATA ---
+        const storyLines = [
+            {
+                speaker: "Narrator",
+                text: "Thunder rumbles over Goa. It's 3 AM at Switch & Roy Studio. The air is thick with tension, humidity, and the smell of stale coffee."
+            },
+            {
+                speaker: "Narrator",
+                text: "Mr. Criticus, the legendary (and hated) design critic, had arrived unannounced to 'review' the team's work. It was a bloodbath."
+            },
+            {
+                speaker: "Narrator",
+                text: "He told Shristhi and Isha their typography was 'criminal'. He told Namya the user journey was 'a road to nowhere'."
+            },
+            {
+                speaker: "Narrator",
+                text: "He laughed at Taher's illustrations, called Kush's level design 'flat', and told Tejas his script lacked drama."
+            },
+            {
+                speaker: "Narrator",
+                text: "Then he turned to Swikriti. 'Your motion graphics,' he sneered, 'are as stiff as a corpse. No flow. No soul.'"
+            },
+            {
+                speaker: "Narrator",
+                text: "Upasana and Roy tried to intervene, but the power suddenly cut. Darkness. A scream. A loud CRUNCH."
+            },
+            {
+                speaker: "Narrator",
+                text: "When the generator kicked in, Criticus was gone. Flattened under a 'Best Design' award. The police are stuck in traffic. It's up to you."
             }
-        }
-
-        window.startGameAction = async function() {
-            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
-            const roles = ['The Designer', 'The Squad', 'The Squad', 'The Tourist', 'The Squad', 'The Squad'];
-            const shuffledRoles = roles.sort(() => Math.random() - 0.5);
-
-            // Create Deck with UIDs - UPDATED WITH FULL CARD LIST
-            const deck = [];
-            // Add more common cards
-            for(let i=0; i<30; i++) {
-                const template = window.CARDS_DB[Math.floor(Math.random() * 7)]; // First 7 are action/chaos
-                deck.push({ ...template, uid: 'c_' + Math.random().toString(36).substr(2,9) });
-            }
-            // Add 1 of each special win/curse card to ensure they exist
-            const specials = [7, 8, 9, 10, 11, 12];
-            specials.forEach(idx => {
-                if(window.CARDS_DB[idx]) {
-                     deck.push({ ...window.CARDS_DB[idx], uid: 'c_' + Math.random().toString(36).substr(2,9) });
-                     deck.push({ ...window.CARDS_DB[idx], uid: 'c_' + Math.random().toString(36).substr(2,9) }); // Add 2 of each to make winning possible
-                }
-            });
-            
-            // Shuffle Deck
-            deck.sort(() => Math.random() - 0.5);
-
-            const snap = await getDoc(gameRef);
-            const currentPlayers = snap.data().players;
-            
-            // Deal
-            const updatedPlayers = currentPlayers.map((p, i) => {
-                const hand = [];
-                for(let c=0; c<4; c++) hand.push(deck.pop());
-                return { ...p, role: shuffledRoles[i % shuffledRoles.length], hand: hand };
-            });
-
-            await updateDoc(gameRef, {
-                status: 'playing', players: updatedPlayers, deck: deck,
-                logs: arrayUnion("GAME STARTED.")
-            });
-        }
-
-        window.fbDrawCard = async function() {
-            if(!window.gameId || !window.user) return;
-            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
-            const snap = await getDoc(gameRef);
-            const data = snap.data();
-            
-            // Turn Check
-            const meIndex = data.players.findIndex(p => p.uid === window.user.uid);
-            if(data.turnIndex !== meIndex) return; 
-
-            if(data.deck.length === 0) return;
-
-            const newDeck = [...data.deck];
-            const card = newDeck.pop();
-            const newPlayers = [...data.players];
-            newPlayers[meIndex].hand.push(card);
-
-            await updateDoc(gameRef, { deck: newDeck, players: newPlayers });
-        }
-
-        window.fbPlayCard = async function(cardUid) {
-            if(!window.gameId || !window.user) return;
-            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
-            const snap = await getDoc(gameRef);
-            const data = snap.data();
-            
-            const meIndex = data.players.findIndex(p => p.uid === window.user.uid);
-            if(data.turnIndex !== meIndex) return;
-
-            const myPlayer = data.players[meIndex];
-            const cardIndex = myPlayer.hand.findIndex(c => c.uid === cardUid);
-            if(cardIndex === -1) return;
-
-            const card = myPlayer.hand[cardIndex];
-            const newPlayers = [...data.players];
-            newPlayers[meIndex].hand.splice(cardIndex, 1);
-            
-            const newDiscard = [...data.discard, card];
-            
-            let nextTurn = data.turnIndex + 1;
-            if(nextTurn >= data.players.length) nextTurn = 0;
-
-            await updateDoc(gameRef, {
-                players: newPlayers, discard: newDiscard, turnIndex: nextTurn,
-                logs: arrayUnion(`${myPlayer.name} played ${card.title}`)
-            });
-        }
-
-        // --- LOBBY LOGIC ---
-        window.enableButtons = function() {
-            document.getElementById('btn-host').disabled = false;
-            document.getElementById('btn-join').disabled = false;
-        }
-
-        window.enterLobby = function(code) {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('lobby-screen').classList.remove('hidden');
-            document.getElementById('lobby-code').innerText = code;
-            document.getElementById('room-code-display').innerText = "ROOM: " + code;
-            document.getElementById('room-code-display').style.display = "block";
-            
-            const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', code);
-            onSnapshot(gameRef, (docSnap) => {
-                if(!docSnap.exists()) return;
-                const data = docSnap.data();
-                
-                const list = document.getElementById('lobby-list');
-                list.innerHTML = "";
-                data.players.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = 'player-item';
-                    div.innerHTML = `<strong>${p.name}</strong>` + (p.uid === data.hostId ? " (HOST)" : "");
-                    list.appendChild(div);
-                });
-
-                if(window.user.uid === data.hostId) {
-                    document.getElementById('btn-start').classList.remove('hidden');
-                    document.getElementById('wait-msg').classList.add('hidden');
-                }
-
-                if(data.status === 'playing') {
-                    document.getElementById('lobby-screen').classList.add('hidden');
-                    // Start Three.js
-                    if(!window.gameInitDone) {
-                        window.gameInitDone = true;
-                        initGame3D(data);
-                    }
-                }
-            });
-        }
-    </script>
-
-    <!-- GAME LOGIC AND ART ENGINE -->
-    <script>
-        // --- GOA SKETCH ENGINE (PROCEDURAL ART) ---
-        // Draws simple vector-like doodles on a canvas for background art
-        
-        function initBackgroundArt() {
-            const canvas = document.getElementById('sketch-background');
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width = window.innerWidth;
-            const h = canvas.height = window.innerHeight;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#333';
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            // Draw Random Elements
-            for(let i=0; i<5; i++) drawPalmTree(ctx, Math.random() * w, h - Math.random() * 200, 100 + Math.random()*50);
-            for(let i=0; i<3; i++) drawCloud(ctx, Math.random() * w, Math.random() * (h/2));
-            drawSun(ctx, w - 100, 100);
-            for(let i=0; i<10; i++) drawWave(ctx, Math.random() * w, h - Math.random() * 100);
-        }
-
-        // Sketch Primitives
-        function jitter(val, amt=2) { return val + (Math.random()-0.5)*amt; }
-        
-        function sketchLine(ctx, x1, y1, x2, y2) {
-            ctx.beginPath();
-            ctx.moveTo(jitter(x1), jitter(y1));
-            const midX = (x1+x2)/2, midY = (y1+y2)/2;
-            ctx.quadraticCurveTo(jitter(midX), jitter(midY), jitter(x2), jitter(y2));
-            ctx.stroke();
-        }
-
-        function drawPalmTree(ctx, x, y, scale) {
-            // Trunk
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.quadraticCurveTo(x + 20, y - scale/2, x, y - scale);
-            ctx.stroke();
-            // Leaves
-            const topX = x, topY = y - scale;
-            for(let i=0; i<5; i++) {
-                const angle = (Math.PI + (i/4)*Math.PI) + (Math.random()*0.5);
-                const len = scale * 0.8;
-                const endX = topX + Math.cos(angle)*len;
-                const endY = topY + Math.sin(angle)*len;
-                sketchLine(ctx, topX, topY, endX, endY);
-            }
-        }
-
-        function drawCloud(ctx, x, y) {
-            ctx.beginPath();
-            ctx.arc(x, y, 30, Math.PI, 0);
-            ctx.arc(x+40, y, 40, Math.PI, 0);
-            ctx.arc(x+80, y, 30, Math.PI, 0);
-            ctx.stroke();
-        }
-
-        function drawSun(ctx, x, y) {
-            ctx.beginPath();
-            ctx.arc(x, y, 40, 0, Math.PI*2);
-            ctx.stroke();
-            for(let i=0; i<8; i++) {
-                const angle = (i/8) * Math.PI * 2;
-                const sx = x + Math.cos(angle)*50;
-                const sy = y + Math.sin(angle)*50;
-                const ex = x + Math.cos(angle)*80;
-                const ey = y + Math.sin(angle)*80;
-                sketchLine(ctx, sx, sy, ex, ey);
-            }
-        }
-
-        function drawWave(ctx, x, y) {
-            ctx.beginPath();
-            ctx.arc(x, y, 10, Math.PI, 0);
-            ctx.arc(x+20, y, 10, Math.PI, 0);
-            ctx.stroke();
-        }
-        
-        window.addEventListener('resize', initBackgroundArt);
-        initBackgroundArt(); // Run once on load
-
-
-        // --- GAME ASSETS & CONSTANTS ---
-        // UPDATED: Now includes ALL required win condition cards with JOKES!
-        window.CARDS_DB = [
-            { id: 'logo', title: 'Make Logo Bigger', type: 'Design', icon: '🧐', desc: 'Target player must reveal their hand.', flavor: '"Can you make it pop? But like, tastefully?"' },
-            { id: 'traffic', title: 'Goa Traffic', type: 'Action', icon: '🐄', desc: 'Skip next player\'s turn.', flavor: 'Stuck behind a cow on the bridge. 2 hours late.' },
-            { id: 'feni', title: 'Spilled Feni', type: 'Action', icon: '🍹', desc: 'Player to left discards 2 cards.', flavor: '"Oops! My bad! Also, that was expensive."' },
-            { id: 'pool', title: 'Pool Party', type: 'Action', icon: '🏖️', desc: 'All players pass their hands to the left.', flavor: 'Canonball! Your phone was in your pocket.' },
-            { id: 'roach', title: 'Bathroom Roach', type: 'Chaos', icon: '🪳', desc: 'Everyone stand up! Last one up draws 2.', flavor: 'It can fly. IT CAN FLY!' },
-            { id: 'scooty', title: 'Scooty Crash', type: 'Chaos', icon: '🛵', desc: 'High-five player across or discard 1.', flavor: 'You scratched the rental. Bye bye deposit.' },
-            { id: 'golden', title: 'Golden Hour', type: 'Chaos', icon: '✨', desc: 'Strike a pose. Worst vibe draws 1.', flavor: 'If you didn\'t story it, did it even happen?' },
-            
-            // BAD CARDS (Tourist Wins)
-            { id: 'comic', title: 'Comic Sans', type: 'Cursed', icon: '🤡', desc: 'Cursed Item 1/3', flavor: 'The font of true evil.' },
-            { id: 'unpaid', title: 'Unpaid Work', type: 'Cursed', icon: '💸', desc: 'Cursed Item 2/3', flavor: '"It\'s great exposure for your portfolio!"' },
-            { id: 'corrupt', title: 'Corrupted File', type: 'Cursed', icon: '💀', desc: 'Cursed Item 3/3', flavor: 'Error 404: Will to live not found.' },
-
-            // GOOD CARDS (Squad Wins)
-            { id: 'render', title: 'Final_Render.ai', type: 'Win', icon: '💾', desc: 'Objective 1/3', flavor: 'Filename: Final_Final_v2_REAL.ai' },
-            { id: 'client', title: 'Client Approval', type: 'Win', icon: '👍', desc: 'Objective 2/3', flavor: '"Actually, I love it. No changes."' },
-            { id: 'invoice', title: 'Invoice Paid', type: 'Win', icon: '💰', desc: 'Objective 3/3', flavor: 'The most beautiful notification in the world.' },
-            
-            // EXTRA
-            { id: 'wifi', title: 'Spotty WiFi', type: 'Action', icon: '📶', desc: 'Target plays with hand revealed.', flavor: 'Buffer... Buffer... Buffer...' }
         ];
 
-        // --- DRAWING HELPERS FOR CARDS ---
-        function drawSketchRect(ctx, x, y, w, h) {
-            sketchLine(ctx, x, y, x+w, y);
-            sketchLine(ctx, x+w, y, x+w, y+h);
-            sketchLine(ctx, x+w, y+h, x, y+h);
-            sketchLine(ctx, x, y+h, x, y);
-        }
-
-        function createCardTexture(data) {
-            const c = document.createElement('canvas'); c.width = 256; c.height = 356;
-            const ctx = c.getContext('2d');
-            
-            ctx.fillStyle = '#111'; ctx.fillRect(0,0,256,356); // Black BG
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.moveTo(jitter(10), jitter(10)); ctx.lineTo(jitter(246), jitter(10));
-            ctx.lineTo(jitter(246), jitter(346)); ctx.lineTo(jitter(10), jitter(346));
-            ctx.closePath(); ctx.fill();
-
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
-            drawSketchRect(ctx, 20, 20, 216, 200);
-
-            // EMOJI ICON RENDERER
-            ctx.textAlign = 'center'; 
-            ctx.textBaseline = 'middle'; 
-            ctx.font = '80px Arial'; 
-            ctx.fillText(data.icon, 128, 110);
-
-            // Cute doodles around icon
-            ctx.font = '20px Arial';
-            ctx.fillText("✨", 80, 80);
-            ctx.fillText("✨", 176, 140);
-            ctx.fillStyle = '#ff69b4'; // Pink hearts
-            ctx.fillText("♥", 160, 80);
-            ctx.fillStyle = '#000';
-
-            // Title
-            ctx.fillStyle = '#000'; ctx.textAlign = 'center';
-            ctx.font = 'bold 22px "Patrick Hand", cursive'; 
-            ctx.fillText(data.title.toUpperCase(), 128, 200);
-            
-            // Type
-            ctx.font = 'italic 16px "Patrick Hand"'; 
-            ctx.fillStyle = '#666';
-            ctx.fillText(data.type, 128, 225);
-
-            // Flavor Text Box
-            ctx.fillStyle = '#eee';
-            ctx.fillRect(30, 240, 196, 80);
-            ctx.strokeRect(30, 240, 196, 80);
-            
-            ctx.fillStyle = '#000';
-            ctx.font = '14px "Gloria Hallelujah"';
-            wrapText(ctx, data.flavor, 128, 260, 180, 18);
-
-            // Corner Stars
-            ctx.font = 'bold 20px Arial'; ctx.fillText("★", 30, 45); ctx.fillText("★", 226, 330);
-
-            return new THREE.CanvasTexture(c);
-        }
+        // --- CANVAS ENGINE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
-        // Helper to wrap text on canvas
-        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-            if(!text) return;
-            var words = text.split(' ');
-            var line = '';
-            for(var n = 0; n < words.length; n++) {
-              var testLine = line + words[n] + ' ';
-              var metrics = ctx.measureText(testLine);
-              var testWidth = metrics.width;
-              if (testWidth > maxWidth && n > 0) {
-                ctx.fillText(line, x, y);
-                line = words[n] + ' ';
-                y += lineHeight;
-              }
-              else {
-                line = testLine;
-              }
-            }
-            ctx.fillText(line, x, y);
+        // Disable smoothing for pixel art look
+        ctx.imageSmoothingEnabled = false;
+
+        let entities = [];
+        let mouseX = 0;
+        let mouseY = 0;
+        let hoveredEntity = null;
+        let rainDrops = []; // Array for rain animation
+
+        // Setup Canvas Resolution
+        function resize() {
+            // We keep internal resolution low (320x240) but scale with CSS
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            ctx.imageSmoothingEnabled = false;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- RAIN SYSTEM ---
+        for(let i=0; i<50; i++) {
+            rainDrops.push({
+                x: Math.random() * CANVAS_WIDTH,
+                y: Math.random() * CANVAS_HEIGHT,
+                speed: Math.random() * 5 + 5
+            });
         }
 
-        function createBackTexture() {
-            const c = document.createElement('canvas'); c.width = 256; c.height = 356;
-            const ctx = c.getContext('2d');
-            
-            ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,356);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
-            
-            for(let i=0; i<20; i++) {
-                const x = Math.random() * 256, y = Math.random() * 356, size = 10 + Math.random() * 20;
-                if(Math.random() > 0.5) {
-                    ctx.beginPath(); ctx.moveTo(x-size, y); ctx.lineTo(x+size, y);
-                    ctx.moveTo(x, y-size); ctx.lineTo(x, y+size); ctx.stroke();
-                } else {
-                    ctx.beginPath(); ctx.arc(x, y, size/2, 0, Math.PI*2); ctx.stroke();
+        // --- ENTITY SYSTEM ---
+        class Entity {
+            constructor(x, y, width, height, type, color, data) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.type = type; // 'suspect', 'clue', 'decor'
+                this.color = color;
+                this.data = data;
+                this.baseY = y;
+                this.animOffset = Math.random() * 100;
+            }
+
+            draw(ctx, time) {
+                let drawY = this.y;
+                
+                // Bounce animation for interactables
+                if (this.type !== 'decor') {
+                    drawY += Math.sin(time * 0.005 + this.animOffset) * 2;
                 }
-            }
-            
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
-            drawSketchRect(ctx, 10, 10, 236, 336);
-            
-            // Logo on back
-            ctx.fillStyle = '#fff';
-            ctx.textAlign = 'center';
-            ctx.font = '20px "Gloria Hallelujah"';
-            ctx.fillText("GOA", 128, 160);
-            ctx.fillText("PANIC", 128, 190);
 
-            return new THREE.CanvasTexture(c);
-        }
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(this.x + 2, this.y + this.height - 2, this.width, 4);
 
-        // --- RULES UI ---
-        window.toggleRules = function(show) {
-            const el = document.getElementById('rules-modal');
-            if(show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
+                // Main Body
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, drawY, this.width, this.height);
 
-        // --- THREE.JS SCENE ---
-        let scene, camera, renderer, raycaster, mouse;
-        let cardsMap = new Map();
-        let table, deckMesh;
-        let localPlayerIndex = -1;
-        
-        const backTex = createBackTexture(); 
+                // Details based on type
+                if (this.type === 'suspect') {
+                    // Head
+                    ctx.fillStyle = '#ffccaa'; // Skin tone
+                    ctx.fillRect(this.x + 4, drawY - 12, 12, 12);
+                    // Hair (matching body color usually)
+                    ctx.fillStyle = this.color; 
+                    ctx.fillRect(this.x + 2, drawY - 14, 16, 4);
+                } 
+                else if (this.type === 'clue') {
+                    // Question mark or highlight
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(this.x + this.width/2 - 1, drawY + 2, 2, 2);
+                }
 
-        function initGame3D(initialData) {
-            document.getElementById('game-stats').style.display = 'block';
-            document.getElementById('log-container').style.display = 'block';
-
-            scene = new THREE.Scene();
-            // Transparent background to show the canvas art
-            scene.background = null; 
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 18, 12);
-            camera.lookAt(0, 0, 2);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.getElementById('game-container').innerHTML = ''; 
-            document.getElementById('game-container').appendChild(renderer.domElement);
-
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            dirLight.position.set(5, 10, 5);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
-
-            // Table (Black surface)
-            const tGeo = new THREE.BoxGeometry(40, 0.1, 40);
-            const tMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-            const table = new THREE.Mesh(tGeo, tMat);
-            table.position.y = -0.5;
-            scene.add(table);
-
-            // Deck
-            const dGeo = new THREE.BoxGeometry(2.5, 0.5, 3.5);
-            const dMat = new THREE.MeshBasicMaterial({ map: backTex });
-            deckMesh = new THREE.Mesh(dGeo, dMat);
-            deckMesh.position.set(-5, 0.25, 0);
-            deckMesh.userData = { isDeck: true };
-            scene.add(deckMesh);
-
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-            
-            // Mouse & Touch Events
-            const container = document.getElementById('game-container');
-            container.addEventListener('mousemove', onMouseMove);
-            container.addEventListener('click', onClick);
-            container.addEventListener('touchstart', onTouchStart, {passive: false});
-            window.addEventListener('resize', onResize);
-
-            animate();
-
-            // Sync
-            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ doc, onSnapshot }) => {
-                const gameRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'games', window.gameId);
-                onSnapshot(gameRef, (snap) => {
-                    if(snap.exists()) syncGameState(snap.data());
-                });
-            });
-        }
-
-        function createCardMesh(data) {
-            const geo = new THREE.BoxGeometry(2.5, 0.02, 3.5);
-            const faceTex = createCardTexture(data);
-            const matFace = new THREE.MeshBasicMaterial({ map: faceTex });
-            const matBack = new THREE.MeshBasicMaterial({ map: backTex });
-            const matSide = new THREE.MeshBasicMaterial({ color: 0x000000 }); 
-            
-            const materials = [matSide, matSide, matSide, matSide, matFace, matBack];
-            const mesh = new THREE.Mesh(geo, materials);
-            mesh.userData = { id: data.uid, data: data, isCard: true };
-            return mesh;
-        }
-
-        function syncGameState(data) {
-            localPlayerIndex = data.players.findIndex(p => p.uid === window.user.uid);
-            if(localPlayerIndex === -1) localPlayerIndex = 0; 
-
-            document.getElementById('role-display').innerText = data.players[localPlayerIndex].role;
-            
-            const isMyTurn = data.turnIndex === localPlayerIndex;
-            const hud = document.getElementById('instruction-text');
-            hud.style.opacity = 1;
-            hud.innerText = isMyTurn ? "IT'S YOUR TURN" : `WAITING FOR ${data.players[data.turnIndex].name}`;
-
-            if(data.logs) {
-                const box = document.getElementById('log-container');
-                box.innerHTML = '';
-                data.logs.slice(-8).reverse().forEach(t => {
-                    const d = document.createElement('div');
-                    d.className = 'log-entry';
-                    d.innerText = t;
-                    box.appendChild(d);
-                });
-            }
-
-            const validUids = new Set();
-            
-            data.players.forEach((p, pIndex) => {
-                const relPos = (pIndex - localPlayerIndex + data.players.length) % data.players.length;
-                p.hand.forEach((card, cIndex) => {
-                    validUids.add(card.uid);
-                    updateCard(card, 'hand', relPos, cIndex, p.hand.length);
-                });
-            });
-
-            data.discard.forEach((card, i) => {
-                validUids.add(card.uid);
-                updateCard(card, 'discard', 0, i, 0);
-            });
-
-            for(let [uid, mesh] of cardsMap) {
-                if(!validUids.has(uid)) {
-                    scene.remove(mesh);
-                    cardsMap.delete(uid);
+                // Hover Outline
+                if (hoveredEntity === this && state.currentPhase === 'investigation') {
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x - 2, drawY - (this.type==='suspect'?14:2), this.width + 4, this.height + (this.type==='suspect'?14:4));
+                    
+                    // Name Tag
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(this.x + this.width/2 - 20, drawY - 30, 40, 10);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '10px "VT323"';
+                    ctx.textAlign = 'center';
+                    const name = this.data.name || this.data.id || "Object";
+                    ctx.fillText(name, this.x + this.width/2, drawY - 22);
                 }
             }
         }
 
-        function updateCard(data, loc, seat, index, total) {
-            let mesh = cardsMap.get(data.uid);
-            if(!mesh) {
-                mesh = createCardMesh(data);
-                scene.add(mesh);
-                cardsMap.set(data.uid, mesh);
-                mesh.position.set(-5, 0.5, 0); 
-            }
+        function initGameWorld() {
+            entities = [];
 
-            let targetPos = new THREE.Vector3();
-            let targetRot = new THREE.Euler();
+            // Room Setup (Implicitly drawn in render loop)
 
-            if(loc === 'discard') {
-                targetPos.set(5, 0.1 + index*0.01, 0);
-                const randomZ = (data.uid.charCodeAt(0) % 10 - 5) * 0.1; 
-                targetRot.set(-Math.PI/2, 0, randomZ);
-            } else {
-                const spread = 1.5;
-                const start = -((total-1)*spread)/2;
-                const offset = start + index*spread;
+            // 1. Furniture (Decor)
+            // Large Conference Table
+            entities.push(new Entity(100, 150, 200, 60, 'decor', '#8B4513', {})); 
+            
+            // Desks with Computers
+            const deskColor = '#A0522D';
+            entities.push(new Entity(20, 80, 40, 30, 'decor', deskColor, {}));
+            entities.push(new Entity(340, 80, 40, 30, 'decor', deskColor, {}));
+            entities.push(new Entity(20, 220, 40, 30, 'decor', deskColor, {}));
+            entities.push(new Entity(340, 220, 40, 30, 'decor', deskColor, {}));
 
-                if(seat === 0) { // ME
-                    targetPos.set(offset, 0.5 + index*0.01, 6);
-                    targetRot.set(-Math.PI/2, 0, 0);
-                } else if (seat === 1) { // Left
-                    targetPos.set(-9, 0.5 + index*0.01, offset);
-                    targetRot.set(Math.PI/2, 0, -Math.PI/2);
-                } else if (seat === 2) { // Top
-                    targetPos.set(-offset, 0.5 + index*0.01, -6);
-                    targetRot.set(Math.PI/2, 0, Math.PI);
-                } else { // Right
-                    targetPos.set(9, 0.5 + index*0.01, -offset);
-                    targetRot.set(Math.PI/2, 0, Math.PI/2);
-                }
-            }
+            // 2. Clues
+            // Tejas's Computer
+            entities.push(new Entity(25, 70, 20, 15, 'clue', '#ADD8E6', {
+                id: "computer_tejas",
+                name: "PC (Tejas)",
+                text: "Tejas's Screen: A script document titled 'The Murder'. Wait, that's just a film concept... right?",
+                isCritical: false
+            }));
+            
+            // Taher's Computer - UPDATED for Illustrator Role
+            entities.push(new Entity(345, 70, 20, 15, 'clue', '#FF0000', {
+                id: "computer_taher",
+                name: "Tablet (Taher)",
+                text: "Taher's Cintiq. A half-finished drawing of a demon. It looks... suspiciously like the victim.",
+                isCritical: false
+            }));
 
-            new TWEEN.Tween(mesh.position).to(targetPos, 500).easing(TWEEN.Easing.Quadratic.Out).start();
-            new TWEEN.Tween(mesh.rotation).to({x:targetRot.x, y:targetRot.y, z:targetRot.z}, 500).start();
+            // Shristhi's Computer
+            entities.push(new Entity(25, 210, 20, 15, 'clue', '#FF69B4', {
+                id: "computer_shristhi",
+                name: "PC (Shristhi)",
+                text: "Shristhi's Screen: A Pinterest board titled 'Deadly Aesthetics'. Suspicious or just design research?",
+                isCritical: false
+            }));
+
+            // The Weapon (Award)
+            entities.push(new Entity(180, 140, 10, 20, 'clue', '#FFD700', {
+                id: "weapon",
+                name: "Award",
+                text: "A heavy 'Best Design 2024' award. The corner is covered in... ketchup? No, blood. It belongs to Roy Studio.",
+                isCritical: true
+            }));
+
+            // Spilled Coffee
+            entities.push(new Entity(120, 160, 12, 8, 'clue', '#6F4E37', {
+                id: "coffee",
+                name: "Coffee",
+                text: "A spilled artisanal latte. Soy milk, double shot. Only Namya (UX) drinks this specific abomination.",
+                isCritical: true
+            }));
+
+            // Sketchbook
+            entities.push(new Entity(260, 160, 15, 10, 'clue', '#F0E68C', {
+                id: "sketchbook",
+                name: "Sketchbook",
+                text: "Swikriti's storyboard sketch. The victim is drawn falling into a void. Caption: 'Bad Physics'.",
+                isCritical: true
+            }));
+
+            // Rejection Letter
+            entities.push(new Entity(350, 230, 10, 8, 'clue', '#FFFFFF', {
+                id: "letter",
+                name: "Letter",
+                text: "A letter from the victim to Upasana. 'Your designs lack soul and the kerning is offensive.' Ouch.",
+                isCritical: true
+            }));
+
+            // Pizza Box (Red Herring)
+            entities.push(new Entity(300, 250, 20, 20, 'clue', '#FFA500', {
+                id: "pizza",
+                name: "Pizza Box",
+                text: "An empty pizza box from last night. Just crumbs and regret. (DRINK!)",
+                isCritical: false,
+                drink: true
+            }));
+
+            // Broken Stylus
+            entities.push(new Entity(50, 250, 5, 15, 'clue', '#808080', {
+                id: "stylus",
+                name: "Stylus",
+                text: "A broken Wacom pen tip. Someone was pressing VERY hard. Kush (Game Design) was complaining about his stylus earlier.",
+                isCritical: true
+            }));
+            
+            // The Body (Chalk Outline)
+            entities.push(new Entity(200, 100, 30, 10, 'decor', '#333', {}));
+
+            // 3. Suspects (Arrange them in a circle around the room)
+            const centerX = 200;
+            const centerY = 150;
+            const radius = 120;
+            
+            state.suspects.forEach((sus, i) => {
+                const angle = (i / state.suspects.length) * Math.PI * 2;
+                const x = centerX + Math.cos(angle) * radius - 10;
+                const y = centerY + Math.sin(angle) * (radius * 0.8) - 20; // Oval shape layout
+                
+                entities.push(new Entity(x, y, 20, 30, 'suspect', sus.color, sus));
+            });
+
+            // Sort by Y for depth
+            entities.sort((a, b) => a.y - b.y);
         }
 
         // --- INPUT HANDLING ---
-        function updateMouse(clientX, clientY) {
-            mouse.x = (clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-        }
-
-        function onMouseMove(e) {
-            updateMouse(e.clientX, e.clientY);
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
+        canvas.addEventListener('mousemove', (e) => {
+            if (!state.gameActive || state.currentPhase === 'story') return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = CANVAS_WIDTH / rect.width;
+            const scaleY = CANVAS_HEIGHT / rect.height;
             
-            const tt = document.getElementById('tooltip');
-            if(intersects.length > 0 && intersects[0].object.userData.isCard) {
-                const data = intersects[0].object.userData.data;
-                if(intersects[0].object.rotation.x < 0) {
-                    tt.style.display = 'block';
-                    tt.style.left = e.clientX + 'px';
-                    tt.style.top = e.clientY + 'px';
-                    document.getElementById('tt-title').innerText = data.title;
-                    document.getElementById('tt-type').innerText = data.type;
-                    document.getElementById('tt-desc').innerText = data.desc || "Action";
-                    document.getElementById('tt-flavor').innerText = data.flavor || "";
+            mouseX = (e.clientX - rect.left) * scaleX;
+            mouseY = (e.clientY - rect.top) * scaleY;
+
+            // Check hover
+            hoveredEntity = null;
+            // Iterate backwards to click top-most items first
+            for (let i = entities.length - 1; i >= 0; i--) {
+                const ent = entities[i];
+                if (ent.type === 'decor') continue;
+                
+                // Simple AABB collision
+                // Hitbox slightly larger for easier clicking
+                if (mouseX >= ent.x - 5 && mouseX <= ent.x + ent.width + 5 &&
+                    mouseY >= ent.y - 15 && mouseY <= ent.y + ent.height + 5) {
+                    hoveredEntity = ent;
+                    break;
                 }
+            }
+
+            const prompt = document.getElementById('interaction-prompt');
+            if (hoveredEntity) {
+                canvas.style.cursor = 'pointer';
+                prompt.classList.remove('hidden');
+                const name = hoveredEntity.data.name || "Object";
+                prompt.innerText = `Inspect ${name}`;
             } else {
-                tt.style.display = 'none';
+                canvas.style.cursor = 'default';
+                prompt.classList.add('hidden');
+            }
+        });
+
+        canvas.addEventListener('click', () => {
+            if (!state.gameActive) return;
+            // If in story mode, we don't interact with entities
+            if (state.currentPhase === 'story') return;
+            
+            if (hoveredEntity) {
+                handleInteraction(hoveredEntity);
+            }
+        });
+
+        // --- RENDER LOOP ---
+        function loop(time) {
+            if (!state.gameActive) return;
+            
+            // Clear
+            ctx.fillStyle = '#202020';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw Rain (Outside Effect)
+            ctx.strokeStyle = '#445588';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            rainDrops.forEach(drop => {
+                drop.y += drop.speed;
+                if(drop.y > CANVAS_HEIGHT) drop.y = -10;
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x, drop.y + 5);
+            });
+            ctx.stroke();
+
+            // Draw Floor
+            ctx.fillStyle = '#444';
+            ctx.fillRect(10, 10, CANVAS_WIDTH - 20, CANVAS_HEIGHT - 20);
+            
+            // Draw Grid/Tiles
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1;
+            for(let x=10; x<CANVAS_WIDTH-10; x+=40) {
+                ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x, CANVAS_HEIGHT-10); ctx.stroke();
+            }
+            for(let y=10; y<CANVAS_HEIGHT-10; y+=40) {
+                ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(CANVAS_WIDTH-10, y); ctx.stroke();
+            }
+
+            // Draw "Walls"
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, CANVAS_WIDTH - 20, CANVAS_HEIGHT - 20);
+
+            // Draw Entities (Sorted by Y)
+            entities.sort((a, b) => a.y - b.y);
+            entities.forEach(ent => ent.draw(ctx, time));
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('dialogue-container').classList.remove('hidden');
+            state.gameActive = true;
+            state.currentPhase = 'story';
+            state.storyIndex = 0;
+            initGameWorld();
+            requestAnimationFrame(loop);
+            
+            // Start Story
+            showNextStoryBeat();
+        }
+
+        function showNextStoryBeat() {
+            if (state.storyIndex < storyLines.length) {
+                const beat = storyLines[state.storyIndex];
+                // Show dialogue with a "Next" button
+                showDialogue(beat.speaker, beat.text, ["Next"]);
+            } else {
+                // Story Over, Begin Game
+                state.currentPhase = 'investigation';
+                showDialogue("Narrator", "The studio is silent now. Find 5 clues to expose the killer.", ["Start Investigation"]);
             }
         }
 
-        function onClick(e) {
-            handleInput(e.clientX, e.clientY);
-        }
+        function handleInteraction(entity) {
+            if (state.currentPhase !== 'investigation') return;
 
-        function onTouchStart(e) {
-            e.preventDefault(); // Stop default touch actions
-            if(e.touches.length > 0) {
-                const t = e.touches[0];
-                handleInput(t.clientX, t.clientY);
+            const data = entity.data;
+
+            if (entity.type === 'clue') {
+                if (data.drink) {
+                    showNotification("DRINK! 🍺", data.text + " (Red Herring!)");
+                } else if (state.evidence.includes(data.id)) {
+                    showNotification("Already Inspected", "You've already noted this clue.");
+                } else {
+                    state.evidence.push(data.id);
+                    if (data.isCritical) {
+                        state.cluesFound++;
+                        updateHUD();
+                        showNotification("CLUE FOUND 🔎", data.text);
+                        
+                        if (state.cluesFound >= state.totalClues) {
+                             // Dramatic Pause before Accusation
+                             setTimeout(() => {
+                                 showDialogue("Narrator", "That's the final clue! The evidence is clear. The team gathers in the center room. The storm rages outside. It's time to name the killer.", ["Gather Everyone"]);
+                             }, 1500);
+                        }
+                    } else {
+                        showNotification("Interesting...", data.text);
+                    }
+                }
+            } else if (entity.type === 'suspect') {
+                showDialogue(data.name, `"${data.alibi}"`, [`Ask about suspicious behavior`]);
+                state.activeSuspect = data;
             }
         }
 
-        function handleInput(x, y) {
-            if(!window.gameId) return;
-            updateMouse(x, y);
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
-            if(intersects.length > 0) {
-                const obj = intersects[0].object;
-                if(obj.userData.isDeck) window.fbDrawCard();
-                else if (obj.userData.isCard) window.fbPlayCard(obj.userData.id);
+        function updateHUD() {
+            document.getElementById('clue-count').innerText = `${state.cluesFound}/${state.totalClues}`;
+            if (state.cluesFound >= state.totalClues) {
+                document.getElementById('clue-count').classList.add('text-red-500');
             }
         }
 
-        function onResize() {
-            camera.aspect = window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            initBackgroundArt();
+        function showDialogue(speaker, text, choices) {
+            const box = document.getElementById('dialogue-container');
+            box.classList.remove('hidden');
+            document.getElementById('speaker-name').innerText = speaker;
+            document.getElementById('dialogue-text').innerText = text;
+            
+            const choicesDiv = document.getElementById('choices-area');
+            choicesDiv.innerHTML = '';
+
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = "btn text-left text-lg w-full";
+                btn.innerText = `> ${choice}`;
+                btn.onclick = () => handleChoice(choice);
+                choicesDiv.appendChild(btn);
+            });
         }
 
-        function animate(t) {
-            requestAnimationFrame(animate);
-            TWEEN.update(t);
-            renderer.render(scene, camera);
+        function handleChoice(choice) {
+            if (choice === "Next") {
+                state.storyIndex++;
+                showNextStoryBeat();
+            }
+            else if (choice === "Start Investigation" || choice === "Back to investigation") {
+                document.getElementById('dialogue-container').classList.add('hidden');
+            } 
+            else if (choice === "Ask about suspicious behavior") {
+                showDialogue(state.activeSuspect.name, `(Nervously) "Okay, fine! ${state.activeSuspect.suspicious}"`, ["Back to investigation"]);
+            }
+            else if (choice === "Accuse Someone" || choice === "Gather Everyone") {
+                renderAccusationUI();
+            }
         }
 
+        function renderAccusationUI() {
+            state.currentPhase = 'accusation';
+            const box = document.getElementById('dialogue-container');
+            box.classList.remove('hidden');
+            document.getElementById('speaker-name').innerText = "FINAL VOTE";
+            document.getElementById('dialogue-text').innerText = "Who killed Mr. Criticus? discuss your theories with the room, then cast your vote.";
+            
+            const choicesDiv = document.getElementById('choices-area');
+            choicesDiv.innerHTML = '';
+            choicesDiv.className = "grid grid-cols-3 gap-2 mt-4";
+
+            state.suspects.forEach(sus => {
+                const btn = document.createElement('button');
+                btn.className = "btn text-sm bg-gray-700 border-gray-500";
+                btn.style.backgroundColor = sus.color;
+                btn.style.color = 'black';
+                btn.innerText = sus.name.toUpperCase();
+                btn.onclick = () => resolveGame(sus.id);
+                choicesDiv.appendChild(btn);
+            });
+        }
+
+        function resolveGame(accusedId) {
+            const killerId = 'swikriti';
+            document.getElementById('dialogue-container').classList.add('hidden');
+            let title, body, btnText;
+
+            if (accusedId === killerId) {
+                title = "CASE SOLVED! 🎉";
+                body = "It was Swikriti! She snaps under the pressure. <br><br> 'He said my easing was LINEAR! Do I look like a default preset?!' she screams. The police arrive just in time. The studio is safe... for now.";
+                btnText = "Play Again";
+            } else {
+                title = "WRONG SUSPECT! 💀";
+                body = `You accused ${state.suspects.find(s=>s.id===accusedId).name}. They are shocked and innocent! <br><br> In the confusion, Swikriti slips out the back door into the rain. The killer escapes. <br><br><strong>EVERYONE FINISH YOUR DRINK!</strong>`;
+                btnText = "Try Again";
+            }
+
+            const notif = document.getElementById('notification');
+            notif.classList.remove('hidden');
+            notif.style.top = '50%';
+            document.getElementById('notif-title').innerHTML = title;
+            document.getElementById('notif-body').innerHTML = body;
+            notif.querySelector('button').innerText = btnText;
+            notif.querySelector('button').onclick = () => location.reload();
+        }
+
+        function showNotification(title, body) {
+            const notif = document.getElementById('notification');
+            notif.classList.remove('hidden');
+            document.getElementById('notif-title').innerText = title;
+            document.getElementById('notif-body').innerText = body;
+        }
+
+        function closeNotification() {
+            document.getElementById('notification').classList.add('hidden');
+        }
+
+        function toggleRulebook() {
+            const el = document.getElementById('rulebook-modal');
+            el.classList.toggle('hidden');
+        }
     </script>
 </body>
 </html>
