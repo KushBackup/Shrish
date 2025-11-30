@@ -14,6 +14,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
+    <!-- html2canvas for Download Feature -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         /* --- GLOBAL & WORKSPACE --- */
         :root {
@@ -289,9 +292,63 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* --- DOWNLOAD MODE STYLES --- */
+        .download-btn-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            padding: 12px 24px;
+            background: var(--neon-blue);
+            color: white;
+            font-weight: bold;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(41, 151, 255, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .download-btn-float:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(41, 151, 255, 0.5); }
+        .download-btn-float.active { background: #ff3b30; box-shadow: 0 10px 30px rgba(255, 59, 48, 0.3); }
+
+        /* Download Overlays */
+        body.download-mode .artboard-wrapper { cursor: crosshair; }
+        body.download-mode .artboard, body.download-mode .flashlight-card {
+            position: relative;
+        }
+        body.download-mode .artboard:hover::after, body.download-mode .flashlight-card:hover::after {
+            content: "\f019"; /* FontAwesome Download Icon */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border-radius: inherit;
+            z-index: 999;
+            backdrop-filter: blur(2px);
+            pointer-events: none; /* Let clicks pass through to container listener */
+        }
+        body.download-mode .artboard:hover, body.download-mode .flashlight-card:hover {
+            outline: 2px solid var(--neon-blue);
+            outline-offset: 4px;
+        }
+
     </style>
 </head>
 <body>
+
+    <!-- DOWNLOAD TOGGLE -->
+    <button id="dl-toggle" class="download-btn-float font-sans">
+        <i class="fa-solid fa-download"></i> <span id="dl-text">Enable Download Mode</span>
+    </button>
 
     <div class="workspace">
         
@@ -306,7 +363,7 @@
             <div class="artboards-container">
                 
                 <!-- SCREEN 0.0: BRAND REVEAL -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_00_Brand_Reveal">
                     <div class="artboard-label">
                         <span>0.0 Brand Reveal</span>
                         <span class="text-xs text-gray-500">App Launch</span>
@@ -331,7 +388,7 @@
                 </div>
 
                 <!-- SCREEN 1: SPLASH -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_01_Splash">
                     <div class="artboard-label">
                         <span>1.0 User Entry</span>
                         <span class="text-xs text-gray-500">Welcome Screen</span>
@@ -358,7 +415,7 @@
                 </div>
 
                 <!-- SCREEN 2: TUTORIAL DETAIL -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_01_5_Tutorial">
                     <div class="artboard-label">
                         <span>1.5 Tutorial</span>
                         <span class="text-xs text-gray-500">Game Mechanics</span>
@@ -390,7 +447,7 @@
                 </div>
 
                 <!-- SCREEN 3: DYNAMIC HUB -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_02_Hub">
                     <div class="artboard-label">
                         <span>2.0 Main Hub</span>
                         <span class="text-xs text-gray-500">Dashboard</span>
@@ -466,6 +523,48 @@
                     </div>
                 </div>
 
+                <!-- SCREEN 3.5: GET GEMS -->
+                <div class="artboard-wrapper downloadable" data-name="Screen_03_5_Get_Gems">
+                    <div class="artboard-label">
+                        <span>2.5 Get Gems</span>
+                        <span class="text-xs text-gray-500">Monetization</span>
+                    </div>
+                    <div class="artboard relative bg-[#0a0a0c] flex flex-col p-6 pt-12">
+                        <button class="absolute top-6 right-6 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                        <h2 class="text-2xl font-bold text-white mb-6">Refill Stash</h2>
+                        
+                        <!-- Watch Ad -->
+                        <div class="flashlight-card p-4 mb-6 flex items-center justify-between bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-white/10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-blue-400"><i class="fa-solid fa-video"></i></div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Watch Ad</div>
+                                    <div class="text-[10px] text-gray-400">+5 Free Gems</div>
+                                </div>
+                            </div>
+                            <button class="bg-blue-600 text-[10px] font-bold px-3 py-1.5 rounded-full text-white">WATCH</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <!-- Pack 1 -->
+                            <div class="flashlight-card p-4 text-center bg-white/5 border border-white/5 hover:border-blue-500/50 transition">
+                                <i class="fa-solid fa-gem text-blue-400 text-2xl mb-2"></i>
+                                <div class="text-white font-bold">50 Gems</div>
+                                <div class="text-[10px] text-gray-500 mb-3">Starter Pack</div>
+                                <button class="w-full bg-white/10 py-2 rounded text-[10px] font-bold text-white border border-white/10">$0.99</button>
+                            </div>
+                            <!-- Pack 2 -->
+                            <div class="flashlight-card p-4 text-center bg-white/5 border border-white/5 hover:border-purple-500/50 transition relative overflow-hidden">
+                                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[8px] font-bold px-2 py-0.5 rounded-bl-lg">POPULAR</div>
+                                <i class="fa-solid fa-sack-dollar text-purple-400 text-2xl mb-2"></i>
+                                <div class="text-white font-bold">200 Gems</div>
+                                <div class="text-[10px] text-gray-500 mb-3">+20 Bonus</div>
+                                <button class="w-full bg-white/10 py-2 rounded text-[10px] font-bold text-white border border-white/10">$3.99</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -480,7 +579,7 @@
             <div class="artboards-container">
                 
                 <!-- SCREEN 4: MATCHMAKING / WAGER -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_03_Matchmaking">
                     <div class="artboard-label">
                         <span>3.0 Matchmaking</span>
                         <span class="text-xs text-gray-500">Visual Tiers</span>
@@ -553,8 +652,47 @@
                     </div>
                 </div>
 
+                <!-- SCREEN 4.5: FINDING OPPONENT -->
+                <div class="artboard-wrapper downloadable" data-name="Screen_03_5_Finding_Match">
+                    <div class="artboard-label">
+                        <span>3.5 Finding Match</span>
+                        <span class="text-xs text-gray-500">Loading State</span>
+                    </div>
+                    <div class="artboard relative bg-black p-6 flex flex-col items-center justify-center">
+                        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600')] bg-cover opacity-20"></div>
+                        <div class="relative z-10 text-center w-full">
+                            <div class="mb-8">
+                                <div class="text-sm font-bold text-white mb-2 animate-pulse">SEARCHING FOR OPPONENT...</div>
+                                <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500 w-1/3 animate-[shimmer_2s_infinite_linear]"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-center gap-6">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-16 h-16 rounded-full border-2 border-blue-500 p-1 mb-2">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=PlayerOne" class="w-full h-full rounded-full bg-gray-800">
+                                    </div>
+                                    <div class="text-xs font-bold text-white">YOU</div>
+                                    <div class="text-[10px] text-gray-400">Lvl 3</div>
+                                </div>
+                                
+                                <div class="text-2xl font-black text-white italic">VS</div>
+                                
+                                <div class="flex flex-col items-center">
+                                    <div class="w-16 h-16 rounded-full border-2 border-white/20 p-1 mb-2 flex items-center justify-center bg-white/5 animate-pulse">
+                                        <i class="fa-solid fa-question text-white/50 text-xl"></i>
+                                    </div>
+                                    <div class="text-xs font-bold text-gray-500">???</div>
+                                    <div class="text-[10px] text-gray-600">Searching</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SCREEN 5: GAMEPLAY -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_04_Gameplay">
                     <div class="artboard-label">
                         <span>4.0 Gameplay</span>
                         <span class="text-xs text-gray-500">Immersive HUD</span>
@@ -592,7 +730,7 @@
                 </div>
 
                 <!-- SCREEN 6: RESULTS -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_05_Results">
                     <div class="artboard-label">
                         <span>5.0 Victory</span>
                         <span class="text-xs text-gray-500">Post-Match</span>
@@ -645,7 +783,7 @@
             <div class="artboards-container">
                 
                 <!-- SCREEN 7: LEADERBOARD -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_06_Leaderboard">
                     <div class="artboard-label">
                         <span>6.0 Leaderboard</span>
                         <span class="text-xs text-gray-500">Global Ranking</span>
@@ -717,7 +855,7 @@
                 </div>
 
                 <!-- SCREEN 8: PROFILE -->
-                <div class="artboard-wrapper">
+                <div class="artboard-wrapper downloadable" data-name="Screen_07_Profile">
                     <div class="artboard-label">
                         <span>7.0 User Profile</span>
                         <span class="text-xs text-gray-500">Stats & Progression</span>
@@ -793,7 +931,7 @@
 
     </div>
 
-    <!-- JAVASCRIPT FOR INTERACTIVITY -->
+    <!-- JAVASCRIPT FOR INTERACTIVITY & DOWNLOADS -->
     <script>
         // 1. Text Animation Logic
         const titleContainer = document.getElementById('title-anim');
@@ -822,29 +960,49 @@
             });
         });
 
-        // 3. Carousel Logic
-        let currentSlide = 0;
-        const track = document.getElementById('main-carousel');
-        const totalSlides = 3;
+        // 3. DOWNLOAD LOGIC (New)
+        const toggleBtn = document.getElementById('dl-toggle');
+        const dlText = document.getElementById('dl-text');
+        
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('download-mode');
+            const isActive = document.body.classList.contains('download-mode');
+            toggleBtn.classList.toggle('active', isActive);
+            dlText.innerText = isActive ? "Click Screen to Download" : "Enable Download Mode";
+        });
 
-        function updateCarousel() {
-            if (track) {
-                track.style.transform = `translateX(-${currentSlide * 100}%)`;
-            }
-        }
+        document.querySelectorAll('.downloadable').forEach(wrapper => {
+            wrapper.addEventListener('click', async function(e) {
+                if (!document.body.classList.contains('download-mode')) return;
+                
+                // Find the artboard element
+                const artboard = this.querySelector('.artboard');
+                const fileName = this.dataset.name || 'design_screen';
 
-        function nextSlide() {
-            currentSlide = (currentSlide + 1) % totalSlides;
-            updateCarousel();
-        }
-
-        function prevSlide() {
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-            updateCarousel();
-        }
-
-        // Auto rotation for carousel (optional demo)
-        setInterval(nextSlide, 5000);
+                // Provide feedback
+                const originalCursor = document.body.style.cursor;
+                document.body.style.cursor = 'wait';
+                
+                try {
+                    const canvas = await html2canvas(artboard, {
+                        backgroundColor: '#000000',
+                        scale: 2, // High resolution
+                        useCORS: true,
+                        logging: false
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = `${fileName}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (err) {
+                    console.error("Capture failed:", err);
+                    alert("Failed to download image. See console.");
+                } finally {
+                    document.body.style.cursor = originalCursor;
+                }
+            });
+        });
 
     </script>
 </body>
