@@ -179,6 +179,17 @@
             border-color: var(--neon-green);
         }
 
+        .import-btn {
+            background: #252525;
+            color: #ccc;
+            border: 1px solid #333;
+        }
+        .import-btn:hover {
+            background: #333;
+            color: white;
+            border-color: #555;
+        }
+
         /* --- ORIGINAL STYLES (Preserved) --- */
         .flow-section { display: flex; flex-direction: column; gap: 40px; }
         
@@ -370,9 +381,15 @@
             <h1 class="text-white font-display font-bold text-xl mb-1">Titan Kit</h1>
             <p class="text-xs text-gray-500 mb-4">Mockup Inspector</p>
             
-            <button id="toggle-download-mode" class="download-btn download-mode-toggle">
-                <i class="fa-solid fa-camera"></i> Toggle Download Mode
-            </button>
+            <div class="flex flex-col gap-2">
+                <button id="toggle-download-mode" class="download-btn download-mode-toggle">
+                    <i class="fa-solid fa-camera"></i> Toggle Download Mode
+                </button>
+                <button id="import-unity-btn" class="download-btn import-btn">
+                    <i class="fa-brands fa-unity"></i> Import to Unity (Batch)
+                </button>
+            </div>
+
             <div id="mode-status" class="text-[10px] text-gray-500 mt-2 text-center opacity-0 transition-opacity">
                 Select an element to download
             </div>
@@ -751,7 +768,7 @@
                             <!-- FOOTER -->
                             <div class="footer-nav" data-label="Component: Footer Nav">
                                 <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
-                                <div class="nav-item active"><i class="fa-solid fa-crown text-yellow-400"></i><span class="text-white">Leagues</span></div>
+                                <div class="nav-item"><i class="fa-solid fa-crown"></i>Leagues</div>
                                 <div class="nav-item"><div class="w-12 h-12 bg-gray-800 border border-white/10 rounded-full flex items-center justify-center -mt-6 text-gray-400"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
                                 <div class="nav-item"><i class="fa-solid fa-gem"></i>Rewards</div>
                                 <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
@@ -818,6 +835,7 @@
             const workspaceRoot = document.getElementById('workspace-root');
             const highlightBox = document.getElementById('highlight-box');
             const downloadBtn = document.getElementById('toggle-download-mode');
+            const importBtn = document.getElementById('import-unity-btn');
             const modeStatus = document.getElementById('mode-status');
             const mainViewport = document.getElementById('main-viewport');
 
@@ -833,6 +851,7 @@
                     document.body.classList.add('selection-active');
                     downloadBtn.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Download Mode';
                     modeStatus.style.opacity = '1';
+                    modeStatus.innerText = 'Select an element to download';
                 } else {
                     document.body.classList.remove('selection-active');
                     downloadBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Toggle Download Mode';
@@ -841,12 +860,48 @@
                 }
             });
 
-            // --- 2. HIERARCHY BUILDER ---
+            // --- 2. BATCH IMPORT LOGIC ---
+            importBtn.addEventListener('click', async () => {
+                if (confirm("This will download ALL detected UI components individually to your computer. Please allow 'Automatic Downloads' if prompted by your browser. Continue?")) {
+                    const allNodes = [];
+                    // Helper to gather all significant nodes
+                    function gather(node) {
+                        if(!node) return;
+                        Array.from(node.children).forEach(child => {
+                            if(isSignificant(child)) allNodes.push(child);
+                            gather(child);
+                        });
+                    }
+                    gather(workspaceRoot);
+
+                    modeStatus.style.opacity = '1';
+                    modeStatus.innerText = `Starting batch export of ${allNodes.length} assets...`;
+
+                    // Simple delay loop to prevent browser choking
+                    for (let i = 0; i < allNodes.length; i++) {
+                        const el = allNodes[i];
+                        modeStatus.innerText = `Exporting ${i+1}/${allNodes.length}: ${getLabel(el)}`;
+                        
+                        // Scroll to element to ensure it renders correctly
+                        el.scrollIntoView({ block: 'center', inline: 'center' });
+                        
+                        await downloadElement(el, true); // true = silent mode
+                        await new Promise(r => setTimeout(r, 250)); // 250ms buffer between downloads
+                    }
+                    
+                    modeStatus.innerText = "Export Complete!";
+                    setTimeout(() => {
+                        modeStatus.style.opacity = '0';
+                        modeStatus.innerText = 'Select an element to download';
+                    }, 3000);
+                }
+            });
+
+            // --- 3. HIERARCHY BUILDER ---
             // Helper to see if element is "significant" enough to show
             function isSignificant(el) {
                 if (el.nodeType !== 1) return false;
                 
-                // Allow specific semantic tags and classes for deeper granularity
                 const significantTags = ['BUTTON', 'IMG', 'I', 'INPUT'];
                 const significantClasses = [
                     'flow-section', 'artboard', 'flashlight-card', 
@@ -854,9 +909,19 @@
                     'nav-item', 'btn-primary'
                 ];
 
+                // Check for visual "shapes" (divs with specific styling)
+                const isShape = el.tagName === 'DIV' && (
+                    el.className.includes('bg-') || 
+                    el.className.includes('border') || 
+                    el.className.includes('shadow') ||
+                    el.className.includes('rounded-full') ||
+                    el.className.includes('rounded-xl')
+                );
+
                 if (significantTags.includes(el.tagName)) return true;
                 if (significantClasses.some(c => el.classList.contains(c))) return true;
                 if (el.hasAttribute('data-label')) return true;
+                if (isShape && !el.classList.contains('artboard-wrapper')) return true; // Include styled divs but avoid wrappers
                 
                 return false;
             }
@@ -930,7 +995,7 @@
             buildTree(workspaceRoot, treeContainer);
 
 
-            // --- 3. HIGHLIGHT & DOWNLOAD ---
+            // --- 4. HIGHLIGHT & DOWNLOAD ---
             function highlightElement(el) {
                 if (!el) return;
                 currentHighlightEl = el;
@@ -975,7 +1040,7 @@
                 }
             });
 
-            async function downloadElement(element) {
+            async function downloadElement(element, silent = false) {
                 // visual feedback
                 const originalBorder = highlightBox.style.borderColor;
                 highlightBox.style.borderColor = '#fff';
@@ -1011,7 +1076,6 @@
                                 if (isIcon) {
                                     // Explicitly set the color to the computed color 
                                     // to prevent it inheriting 'transparent' from a parent.
-                                    // Note: We use the clone's window for computed style.
                                     try {
                                         const computed = clonedDoc.defaultView.getComputedStyle(el);
                                         el.style.color = computed.color; 
@@ -1024,10 +1088,6 @@
                                 // For everything else, hide the text color
                                 el.style.color = 'transparent';
                                 el.style.textShadow = 'none';
-                                
-                                // Optional: if you want to be very aggressive and remove text nodes
-                                // el.childNodes.forEach(node => { if(node.nodeType === 3) node.nodeValue = ''; });
-                                // However, simple color transparency preserves layout best.
                             });
                         }
                     });
@@ -1045,7 +1105,7 @@
                     
                 } catch (err) {
                     console.error("Download failed:", err);
-                    alert("Could not download element. Check console.");
+                    if(!silent) alert("Could not download element. Check console.");
                 }
             }
 
