@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Titan Arcade - Premium UX Design</title>
+    <title>Titan Arcade - Premium UX Design & DevTools</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,8 +11,11 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Fonts: Premium Luxury Tech -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Html2Canvas for downloading elements -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <style>
         /* --- GLOBAL & WORKSPACE --- */
@@ -25,6 +28,7 @@
             --neon-green: #30d158;
             --neon-gold: #ffd60a;
             --bg-dark: #050507;
+            --sidebar-width: 300px;
         }
 
         body {
@@ -34,26 +38,150 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
             padding: 0;
-            overflow-x: auto; 
-            min-height: 100vh;
+            overflow: hidden; /* Main scroll handled by containers now */
+            height: 100vh;
+            display: flex;
         }
 
         .font-display { font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
+
+        /* --- LAYOUT STRUCTURE --- */
+        #app-sidebar {
+            width: var(--sidebar-width);
+            background: rgba(10, 10, 12, 0.95);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main-viewport {
+            flex-grow: 1;
+            height: 100vh;
+            overflow: auto;
+            position: relative;
+        }
 
         .workspace {
             display: flex;
             padding: 80px;
             gap: 120px;
             width: max-content; 
-            min-width: 100vw;
+            min-width: 100%;
+            transform-origin: top left;
         }
 
-        .flow-section {
+        /* --- SIDEBAR COMPONENTS --- */
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            font-weight: 700;
+            margin-bottom: 10px;
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+
+        .tree-view {
+            padding: 10px 0;
+            font-family: 'Fira Code', monospace; /* Monospace for code-like feel */
+            font-size: 12px;
+        }
+
+        .tree-item {
+            padding: 6px 20px;
+            cursor: pointer;
+            color: #9ca3af;
             display: flex;
-            flex-direction: column;
-            gap: 40px;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
+        .tree-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .tree-item.active {
+            background: rgba(41, 151, 255, 0.1);
+            color: var(--neon-blue);
+            border-left-color: var(--neon-blue);
+        }
+
+        .tree-indent {
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .tree-icon {
+            width: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* --- DOWNLOAD MODE & HIGHLIGHTS --- */
+        .highlight-overlay {
+            position: absolute;
+            border: 2px solid var(--neon-green);
+            background: rgba(48, 209, 88, 0.1);
+            pointer-events: none;
+            z-index: 9999;
+            border-radius: 4px;
+            transition: all 0.1s;
+            display: none;
+        }
+        
+        .selection-active .selectable-element {
+            cursor: copy !important;
+        }
+
+        .download-btn {
+            background: var(--neon-blue);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .download-btn:hover { background: #007aff; }
+        
+        .download-mode-toggle {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #ccc;
+        }
+        .download-mode-toggle.active {
+            background: var(--neon-green);
+            color: black;
+            border-color: var(--neon-green);
+        }
+
+        /* --- ORIGINAL STYLES (Preserved) --- */
+        .flow-section { display: flex; flex-direction: column; gap: 40px; }
+        
         .flow-header {
             font-family: 'Outfit', sans-serif;
             font-size: 32px;
@@ -78,19 +206,8 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .artboards-container {
-            display: flex;
-            gap: 80px;
-            align-items: flex-start;
-        }
-
-        .artboard-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            position: relative;
-        }
-
+        .artboards-container { display: flex; gap: 80px; align-items: flex-start; }
+        .artboard-wrapper { display: flex; flex-direction: column; gap: 20px; position: relative; }
         .artboard-label {
             font-family: 'Outfit', sans-serif;
             font-size: 14px;
@@ -103,7 +220,7 @@
 
         /* --- PREMIUM DEVICE FRAME --- */
         .artboard {
-            width: 340px; /* Slightly wider for modern feel */
+            width: 340px; 
             height: 700px;
             background-color: #000;
             border: 1px solid #333;
@@ -113,7 +230,7 @@
             box-shadow: 
                 0 0 0 14px #0a0a0a,
                 0 50px 100px -20px rgba(0,0,0,0.9),
-                0 0 0 15px rgba(255,255,255,0.05); /* Subtle rim light */
+                0 0 0 15px rgba(255,255,255,0.05);
             transform-origin: top left;
         }
         
@@ -157,10 +274,10 @@
         /* --- COMMON UI COMPONENTS --- */
         .header-glass {
             position: absolute;
-            top: 0; left: 0; w-full;
+            top: 0; left: 0;
             width: 100%;
             padding: 16px 20px;
-            padding-top: 50px; /* Safe area */
+            padding-top: 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -190,7 +307,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 20px; /* Home indicator space */
+            padding-bottom: 20px;
             z-index: 50;
         }
 
@@ -208,7 +325,6 @@
         .nav-item.active i { color: var(--neon-blue); text-shadow: 0 0 10px rgba(41,151,255,0.5); }
         .nav-item i { font-size: 18px; margin-bottom: 2px; }
 
-        /* --- FLASHLIGHT CARD --- */
         .flashlight-card {
             position: relative;
             background: rgba(255,255,255,0.03);
@@ -223,7 +339,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* --- BUTTONS --- */
         .btn-primary {
             background: linear-gradient(135deg, #2997ff 0%, #007aff 100%);
             color: white;
@@ -237,7 +352,6 @@
         }
         .btn-primary:active { transform: scale(0.98); }
 
-        /* --- TEXT ANIMATION --- */
         .clip-text-container { display: inline-flex; overflow: hidden; }
         .clip-char {
             transform: translateY(-100%);
@@ -250,431 +364,693 @@
 </head>
 <body>
 
-    <div class="workspace">
-        
-        <!-- SECTION 1: ONBOARDING -->
-        <div class="flow-section">
-            <div class="flow-header">
-                <i class="fa-solid fa-rocket text-blue-500"></i>
-                01. Entry & Onboarding
-                <span class="flow-tag">Flow</span>
-            </div>
+    <!-- LEFT SIDEBAR -->
+    <div id="app-sidebar">
+        <div class="sidebar-header">
+            <h1 class="text-white font-display font-bold text-xl mb-1">Titan Kit</h1>
+            <p class="text-xs text-gray-500 mb-4">Mockup Inspector</p>
             
-            <div class="artboards-container">
-                
-                <!-- SCREEN 0.0: BRAND REVEAL -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>0.0 Brand Reveal</span></div>
-                    <div class="artboard flex flex-col items-center justify-center bg-black relative">
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(41,151,255,0.15)_0%,transparent_60%)]"></div>
-                        <i class="fa-brands fa-space-awesome text-6xl text-white mb-6 drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] animate-pulse"></i>
-                        <h1 class="text-4xl font-display font-black tracking-widest text-white clip-text-container" id="brand-text">TITAN</h1>
-                        <p class="text-xs text-blue-400 font-bold tracking-[0.5em] mt-2 uppercase">Arcade</p>
-                    </div>
-                </div>
-
-                <!-- SCREEN 1.0: LANDING -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>1.0 Landing</span></div>
-                    <div class="artboard relative bg-mesh-purple flex flex-col justify-end p-6">
-                        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614726365723-49cfae9f9110?q=80&w=600')] bg-cover opacity-40 mix-blend-overlay"></div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-                        
-                        <div class="relative z-10 mb-10">
-                            <h1 class="text-5xl font-display font-bold text-white leading-tight mb-4">Play.<br>Win.<br>Earn.</h1>
-                            <p class="text-gray-300 text-sm mb-8 leading-relaxed">The premier esports arcade. Compete in skill-based minigames and win real rewards.</p>
-                            <button class="btn-primary w-full py-4 text-sm">Get Started</button>
-                            <p class="text-[10px] text-center text-gray-500 mt-4">By continuing, you agree to our Terms.</p>
-                        </div>
-                    </div>
-                </div>
-
+            <button id="toggle-download-mode" class="download-btn download-mode-toggle">
+                <i class="fa-solid fa-camera"></i> Toggle Download Mode
+            </button>
+            <div id="mode-status" class="text-[10px] text-gray-500 mt-2 text-center opacity-0 transition-opacity">
+                Select an element to download
             </div>
         </div>
 
-        <!-- SECTION 2: CORE HUB -->
-        <div class="flow-section">
-            <div class="flow-header">
-                <i class="fa-solid fa-layer-group text-purple-500"></i>
-                02. Main Hub Layout
-                <span class="flow-tag">Core</span>
-            </div>
-
-            <div class="artboards-container">
-                
-                <!-- SCREEN 2.0: HUB HOME -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>2.0 Main Hub</span></div>
-                    <div class="artboard relative bg-mesh-blue">
-                        <!-- HEADER -->
-                        <div class="header-glass">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 p-[1px]">
-                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full rounded-full bg-black">
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="text-[9px] text-gray-400 uppercase font-bold">Rookie</span>
-                                    <span class="text-xs font-bold text-white">Felix</span>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <div class="resource-pill"><i class="fa-solid fa-crown text-yellow-400 text-[10px]"></i><span class="text-xs font-bold">0</span></div>
-                                <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
-                                <div class="resource-pill bg-green-900/40 border-green-500/30"><i class="fa-solid fa-dollar-sign text-green-400 text-[10px]"></i><span class="text-xs font-bold text-green-400">$2.50</span></div>
-                            </div>
-                        </div>
-
-                        <!-- SCROLL CONTENT -->
-                        <div class="h-full overflow-y-auto pt-24 pb-28 px-5 no-scrollbar">
-                            <!-- Hero Banner -->
-                            <div class="w-full aspect-[4/3] rounded-3xl relative overflow-hidden mb-6 group cursor-pointer shadow-2xl">
-                                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600')] bg-cover bg-center transition duration-700 group-hover:scale-105"></div>
-                                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                                <div class="absolute bottom-5 left-5 right-5">
-                                    <div class="flex gap-2 mb-2">
-                                        <span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Featured</span>
-                                    </div>
-                                    <h2 class="text-3xl font-display font-bold text-white mb-1">Neon Blitz</h2>
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-xs text-gray-300">12k Players Online</p>
-                                        <button class="bg-white text-black px-4 py-2 rounded-xl text-xs font-bold">PLAY</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- List -->
-                            <h3 class="text-sm font-display font-bold text-white mb-3">Trending Games</h3>
-                            <div class="space-y-3">
-                                <div class="flashlight-card p-3 flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded-xl bg-gray-800 bg-[url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=200')] bg-cover"></div>
-                                    <div class="flex-1">
-                                        <h4 class="text-sm font-bold text-white">Cyber Drift</h4>
-                                        <p class="text-[10px] text-gray-400">Racing • Multi</p>
-                                    </div>
-                                    <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><i class="fa-solid fa-play text-xs"></i></button>
-                                </div>
-                                <div class="flashlight-card p-3 flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded-xl bg-gray-800 bg-[url('https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=200')] bg-cover"></div>
-                                    <div class="flex-1">
-                                        <h4 class="text-sm font-bold text-white">Void Jump</h4>
-                                        <p class="text-[10px] text-gray-400">Platformer • Solo</p>
-                                    </div>
-                                    <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><i class="fa-solid fa-play text-xs"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- FOOTER -->
-                        <div class="footer-nav">
-                            <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
-                            <div class="nav-item"><i class="fa-solid fa-crown"></i>Leagues</div>
-                            <div class="nav-item active"><div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center -mt-6 shadow-lg shadow-blue-500/30 text-white"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
-                            <div class="nav-item"><i class="fa-solid fa-gem"></i>Rewards</div>
-                            <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SCREEN 9.0: REWARDS HUB -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>9.0 Rewards Hub</span></div>
-                    <div class="artboard relative bg-mesh-dark">
-                        <!-- HEADER -->
-                        <div class="header-glass">
-                            <h2 class="text-lg font-display font-bold text-white">Rewards</h2>
-                            <div class="flex gap-2">
-                                <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
-                                <div class="resource-pill bg-green-900/40 border-green-500/30"><i class="fa-solid fa-dollar-sign text-green-400 text-[10px]"></i><span class="text-xs font-bold text-green-400">$2.50</span></div>
-                            </div>
-                        </div>
-
-                        <div class="h-full overflow-y-auto pt-24 pb-28 px-5 no-scrollbar">
-                            <!-- Double Deposit Banner -->
-                            <div class="flashlight-card p-0 h-32 relative overflow-hidden mb-4 bg-gradient-to-r from-green-900 to-emerald-950 border-green-500/20">
-                                <div class="absolute right-0 top-0 h-full w-1/2 bg-[url('https://images.unsplash.com/photo-1580519542036-c47de6196ba5?q=80&w=400')] bg-cover mix-blend-overlay opacity-30"></div>
-                                <div class="relative z-10 p-5 flex flex-col justify-center h-full">
-                                    <h3 class="text-white font-display font-bold text-lg leading-tight">Double Your<br>Deposit</h3>
-                                    <button class="mt-3 bg-green-500 text-black text-[10px] font-bold px-4 py-2 rounded-full w-max">DEPOSIT NOW</button>
-                                </div>
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-6xl font-black text-green-400 opacity-20 italic">2X</div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div class="flashlight-card p-4 bg-[#111]">
-                                    <p class="text-[10px] text-gray-400">Refer friends</p>
-                                    <h4 class="text-sm font-bold text-white mb-4">Cash Rewards</h4>
-                                    <i class="fa-solid fa-user-plus text-2xl text-gray-600"></i>
-                                </div>
-                                <div class="flashlight-card p-4 bg-[#111]">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <span class="text-xs font-bold text-white">Daily Ops</span>
-                                        <span class="text-[10px] text-green-400 font-bold">$1.00</span>
-                                    </div>
-                                    <div class="w-full bg-gray-800 h-1.5 rounded-full mb-3"><div class="w-1/2 h-full bg-blue-500 rounded-full"></div></div>
-                                    <i class="fa-solid fa-bullseye text-2xl text-orange-500"></i>
-                                </div>
-                            </div>
-
-                            <!-- Golden Egg Offer -->
-                            <div class="flashlight-card p-0 h-40 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden mb-4">
-                                <div class="absolute -left-6 top-4 text-[120px] leading-none">🥚</div>
-                                <div class="absolute right-5 top-5 text-right">
-                                    <div class="text-[10px] text-gray-400">Instantly get</div>
-                                    <div class="text-3xl font-display font-bold text-white">$20</div>
-                                    <div class="text-[10px] text-yellow-400 font-bold">+ Daily Gift</div>
-                                    <div class="text-xl font-bold text-gray-500">$1</div>
-                                </div>
-                                <div class="absolute bottom-3 left-5 text-[9px] text-gray-600">Total $51 bonus value</div>
-                            </div>
-                        </div>
-
-                        <!-- FOOTER -->
-                        <div class="footer-nav">
-                            <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
-                            <div class="nav-item"><i class="fa-solid fa-crown"></i>Leagues</div>
-                            <div class="nav-item"><div class="w-12 h-12 bg-gray-800 border border-white/10 rounded-full flex items-center justify-center -mt-6 text-gray-400"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
-                            <div class="nav-item active"><i class="fa-solid fa-gem"></i>Rewards</div>
-                            <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+        <div class="sidebar-section-title">Hierarchy</div>
+        <div id="tree-container" class="tree-view">
+            <!-- Tree items injected here by JS -->
         </div>
-
-        <!-- SECTION 3: GAME LOOP -->
-        <div class="flow-section">
-            <div class="flow-header">
-                <i class="fa-solid fa-gamepad text-blue-500"></i>
-                03. Game Loop
-                <span class="flow-tag">Action</span>
-            </div>
-
-            <div class="artboards-container">
-                
-                <!-- SCREEN 3.0: MATCHMAKING -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>3.0 Matchmaking</span></div>
-                    <div class="artboard relative bg-mesh-purple p-6 pt-24">
-                        <!-- Header -->
-                        <div class="header-glass">
-                            <i class="fa-solid fa-arrow-left text-white text-lg"></i>
-                            <div class="flex gap-2">
-                                <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
-                            </div>
-                        </div>
-
-                        <h2 class="text-3xl font-display font-bold text-white mb-2">Select Tier</h2>
-                        <p class="text-sm text-gray-400 mb-8">Higher risk, higher reward.</p>
-
-                        <div class="space-y-4">
-                            <!-- Tier Cards -->
-                            <div class="flashlight-card h-24 bg-gradient-to-r from-gray-900 to-black flex p-0 overflow-hidden relative group">
-                                <div class="w-1.5 h-full bg-green-500"></div>
-                                <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
-                                    <span class="text-[10px] text-green-400 font-bold uppercase tracking-wider mb-1">Practice</span>
-                                    <span class="text-xl font-bold text-white">Free Entry</span>
-                                    <span class="text-xs text-gray-500">No Prize</span>
-                                </div>
-                                <div class="absolute right-0 top-0 bottom-0 w-32 bg-[url('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=300')] bg-cover opacity-20 mask-image-linear-to-l"></div>
-                            </div>
-
-                            <div class="flashlight-card h-28 bg-gradient-to-r from-blue-900/40 to-black flex p-0 overflow-hidden relative border-blue-500/30">
-                                <div class="w-1.5 h-full bg-blue-500"></div>
-                                <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
-                                    <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">Rookie</span>
-                                    <div class="text-xl font-bold text-white flex items-center gap-2">3 <i class="fa-solid fa-gem text-sm text-pink-500"></i></div>
-                                    <span class="text-xs text-blue-200">Win 5 Gems</span>
-                                </div>
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-4xl text-blue-500 opacity-20"><i class="fa-solid fa-shield-cat"></i></div>
-                            </div>
-
-                            <div class="flashlight-card h-24 bg-gradient-to-r from-purple-900/40 to-black flex p-0 overflow-hidden relative border-purple-500/30 opacity-70">
-                                <div class="w-1.5 h-full bg-purple-500"></div>
-                                <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
-                                    <span class="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Legend</span>
-                                    <div class="text-xl font-bold text-white flex items-center gap-2">6 <i class="fa-solid fa-gem text-sm text-pink-500"></i></div>
-                                    <span class="text-xs text-purple-200">Win 10 Gems</span>
-                                </div>
-                                <i class="fa-solid fa-lock absolute right-6 top-1/2 -translate-y-1/2 text-gray-600"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SCREEN 4.5: IN-GAME TUTORIAL OVERLAY -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>4.5 Tutorial Overlay</span></div>
-                    <div class="artboard relative bg-black flex items-center justify-center">
-                        <!-- Faint Game BG -->
-                        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5980?q=80&w=400')] bg-cover opacity-20"></div>
-                        
-                        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-10"></div>
-                        
-                        <div class="relative z-20 text-center p-8">
-                            <div class="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6 relative">
-                                <i class="fa-regular fa-hand-pointer text-3xl text-white animate-pulse"></i>
-                                <div class="absolute -bottom-2 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
-                            </div>
-                            <h2 class="text-2xl font-display font-bold text-white mb-2">Drag to Move</h2>
-                            <p class="text-sm text-gray-400 mb-8">Your ship fires automatically.<br>Dodge debris.</p>
-                            <button class="btn-primary px-8 py-3 text-xs w-full">I'M READY</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SCREEN 5.0: GAMEPLAY -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>5.0 Gameplay</span></div>
-                    <div class="artboard relative bg-black overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5980?q=80&w=400')] bg-cover opacity-60"></div>
-                        <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80"></div>
-                        
-                        <!-- HUD -->
-                        <div class="absolute top-14 left-0 w-full px-5 flex justify-between items-center">
-                            <div class="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl">
-                                <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider">Score</span>
-                                <span class="text-xl font-display font-bold text-white">2,450</span>
-                            </div>
-                            <div class="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center bg-black/40 backdrop-blur-md">
-                                <span class="text-sm font-bold text-yellow-400">45</span>
-                            </div>
-                        </div>
-
-                        <!-- Game Elements -->
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[40px] border-b-cyan-400 filter drop-shadow-[0_0_20px_cyan]"></div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- SECTION 4: SOCIAL & SETTINGS -->
-        <div class="flow-section">
-            <div class="flow-header">
-                <i class="fa-solid fa-users text-gold-500"></i>
-                04. Social & Settings
-                <span class="flow-tag">Meta</span>
-            </div>
-
-            <div class="artboards-container">
-                
-                <!-- SCREEN 6.0: LEADERBOARD -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>6.0 Leaderboard</span></div>
-                    <div class="artboard relative bg-mesh-gold">
-                        <div class="header-glass">
-                            <h2 class="text-lg font-display font-bold text-white">Global Elite</h2>
-                            <div class="resource-pill bg-yellow-900/40 border-yellow-500/30"><span class="text-[10px] text-yellow-400 font-bold uppercase">Season 4</span></div>
-                        </div>
-
-                        <div class="pt-24 px-5 pb-28 h-full overflow-y-auto no-scrollbar">
-                            <!-- Podium -->
-                            <div class="flex justify-center items-end gap-3 mb-8">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-10 h-10 rounded-full bg-gray-700 border border-gray-500 mb-1"></div>
-                                    <div class="text-[10px] font-bold text-gray-400">#2 Neon</div>
-                                    <div class="h-16 w-12 bg-white/5 rounded-t-lg border-t border-white/10"></div>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <i class="fa-solid fa-crown text-yellow-400 text-lg mb-1 drop-shadow-lg"></i>
-                                    <div class="w-14 h-14 rounded-full bg-gray-700 border-2 border-yellow-400 mb-1 shadow-[0_0_15px_rgba(255,215,0,0.4)]"></div>
-                                    <div class="text-[10px] font-bold text-white">#1 Cyber</div>
-                                    <div class="h-24 w-16 bg-gradient-to-b from-yellow-900/40 to-black rounded-t-lg border-t border-yellow-500/30"></div>
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    <div class="w-10 h-10 rounded-full bg-gray-700 border border-orange-700 mb-1"></div>
-                                    <div class="text-[10px] font-bold text-gray-400">#3 Pixel</div>
-                                    <div class="h-12 w-12 bg-white/5 rounded-t-lg border-t border-white/10"></div>
-                                </div>
-                            </div>
-
-                            <!-- List -->
-                            <div class="space-y-2">
-                                <div class="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center">
-                                    <span class="text-xs font-bold text-gray-500 w-6">4</span>
-                                    <div class="w-8 h-8 rounded-full bg-gray-800 mr-3"></div>
-                                    <span class="text-sm font-bold text-white flex-1">VoidWalker</span>
-                                    <span class="text-xs font-bold text-blue-400">8,900</span>
-                                </div>
-                                <!-- User -->
-                                <div class="bg-blue-900/20 p-3 rounded-xl border border-blue-500/30 flex items-center transform scale-105 shadow-lg">
-                                    <span class="text-xs font-bold text-white w-6">142</span>
-                                    <div class="w-8 h-8 rounded-full bg-gray-800 mr-3 border border-white"></div>
-                                    <span class="text-sm font-bold text-white flex-1">YOU</span>
-                                    <span class="text-xs font-bold text-yellow-400">2,450</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- FOOTER -->
-                        <div class="footer-nav">
-                            <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
-                            <div class="nav-item active"><i class="fa-solid fa-crown text-yellow-400"></i><span class="text-white">Leagues</span></div>
-                            <div class="nav-item"><div class="w-12 h-12 bg-gray-800 border border-white/10 rounded-full flex items-center justify-center -mt-6 text-gray-400"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
-                            <div class="nav-item"><i class="fa-solid fa-gem"></i>Rewards</div>
-                            <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SCREEN 10.0: SETTINGS -->
-                <div class="artboard-wrapper">
-                    <div class="artboard-label"><span>10.0 Settings</span></div>
-                    <div class="artboard relative bg-[#050505] p-6 pt-24">
-                        <div class="header-glass">
-                            <div class="flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer">
-                                <i class="fa-solid fa-arrow-left"></i> <span class="text-sm font-bold">Back</span>
-                            </div>
-                        </div>
-
-                        <h2 class="text-2xl font-display font-bold text-white mb-8">Settings</h2>
-
-                        <div class="space-y-3">
-                            <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]">
-                                <div>
-                                    <div class="text-green-400 font-bold text-sm">Cash Out</div>
-                                    <div class="text-[10px] text-gray-500">Withdraw winnings</div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-gray-600"></i>
-                            </div>
-                            <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]">
-                                <div>
-                                    <div class="text-white font-bold text-sm">Sound & Haptics</div>
-                                    <div class="text-[10px] text-gray-500">Preferences</div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-gray-600"></i>
-                            </div>
-                            <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]">
-                                <div>
-                                    <div class="text-white font-bold text-sm">Support</div>
-                                    <div class="text-[10px] text-gray-500">Help & FAQ</div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-gray-600"></i>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-6 border-t border-white/5 space-y-4">
-                            <div class="text-sm font-bold text-orange-500">Log Out</div>
-                            <div class="text-xs text-gray-500">Privacy Policy</div>
-                            <div class="text-xs text-gray-500">Terms of Service</div>
-                        </div>
-                        
-                        <div class="absolute bottom-10 left-0 w-full text-center text-[10px] text-gray-700 font-mono">v2.4.0 (Build 892)</div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
     </div>
 
-    <!-- SCRIPT FOR ANIMATIONS -->
+    <!-- MAIN VIEWPORT -->
+    <div id="main-viewport">
+        <!-- Overlay for selection highlighting -->
+        <div id="highlight-box" class="highlight-overlay"></div>
+
+        <div class="workspace" id="workspace-root">
+            
+            <!-- SECTION 1: ONBOARDING -->
+            <div class="flow-section" data-label="Flow: Onboarding">
+                <div class="flow-header" data-label="Header: Onboarding">
+                    <i class="fa-solid fa-rocket text-blue-500"></i>
+                    01. Entry & Onboarding
+                    <span class="flow-tag">Flow</span>
+                </div>
+                
+                <div class="artboards-container">
+                    
+                    <!-- SCREEN 0.0: BRAND REVEAL -->
+                    <div class="artboard-wrapper" data-label="Screen 0.0 Wrapper">
+                        <div class="artboard-label"><span>0.0 Brand Reveal</span></div>
+                        <div class="artboard flex flex-col items-center justify-center bg-black relative" data-label="Artboard: Brand Reveal">
+                            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(41,151,255,0.15)_0%,transparent_60%)]"></div>
+                            <i class="fa-brands fa-space-awesome text-6xl text-white mb-6 drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] animate-pulse" data-label="Icon: Logo"></i>
+                            <h1 class="text-4xl font-display font-black tracking-widest text-white clip-text-container" id="brand-text" data-label="Text: Titan Title">TITAN</h1>
+                            <p class="text-xs text-blue-400 font-bold tracking-[0.5em] mt-2 uppercase" data-label="Text: Subtitle">Arcade</p>
+                        </div>
+                    </div>
+
+                    <!-- SCREEN 1.0: LANDING -->
+                    <div class="artboard-wrapper" data-label="Screen 1.0 Wrapper">
+                        <div class="artboard-label"><span>1.0 Landing</span></div>
+                        <div class="artboard relative bg-mesh-purple flex flex-col justify-end p-6" data-label="Artboard: Landing">
+                            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614726365723-49cfae9f9110?q=80&w=600')] bg-cover opacity-40 mix-blend-overlay"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                            
+                            <div class="relative z-10 mb-10">
+                                <h1 class="text-5xl font-display font-bold text-white leading-tight mb-4" data-label="Heading: Play Win Earn">Play.<br>Win.<br>Earn.</h1>
+                                <p class="text-gray-300 text-sm mb-8 leading-relaxed" data-label="Text: Description">The premier esports arcade. Compete in skill-based minigames and win real rewards.</p>
+                                <button class="btn-primary w-full py-4 text-sm" data-label="Button: Get Started">Get Started</button>
+                                <p class="text-[10px] text-center text-gray-500 mt-4">By continuing, you agree to our Terms.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: CORE HUB -->
+            <div class="flow-section" data-label="Flow: Main Hub">
+                <div class="flow-header" data-label="Header: Main Hub">
+                    <i class="fa-solid fa-layer-group text-purple-500"></i>
+                    02. Main Hub Layout
+                    <span class="flow-tag">Core</span>
+                </div>
+
+                <div class="artboards-container">
+                    
+                    <!-- SCREEN 2.0: HUB HOME -->
+                    <div class="artboard-wrapper" data-label="Screen 2.0 Wrapper">
+                        <div class="artboard-label"><span>2.0 Main Hub</span></div>
+                        <div class="artboard relative bg-mesh-blue" data-label="Artboard: Main Hub">
+                            <!-- HEADER -->
+                            <div class="header-glass" data-label="Component: Header">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 p-[1px]">
+                                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full rounded-full bg-black">
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] text-gray-400 uppercase font-bold">Rookie</span>
+                                        <span class="text-xs font-bold text-white">Felix</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div class="resource-pill"><i class="fa-solid fa-crown text-yellow-400 text-[10px]"></i><span class="text-xs font-bold">0</span></div>
+                                    <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
+                                    <div class="resource-pill bg-green-900/40 border-green-500/30"><i class="fa-solid fa-dollar-sign text-green-400 text-[10px]"></i><span class="text-xs font-bold text-green-400">$2.50</span></div>
+                                </div>
+                            </div>
+
+                            <!-- SCROLL CONTENT -->
+                            <div class="h-full overflow-y-auto pt-24 pb-28 px-5 no-scrollbar">
+                                <!-- Hero Banner -->
+                                <div class="w-full aspect-[4/3] rounded-3xl relative overflow-hidden mb-6 group cursor-pointer shadow-2xl" data-label="Card: Hero Banner">
+                                    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600')] bg-cover bg-center transition duration-700 group-hover:scale-105"></div>
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                                    <div class="absolute bottom-5 left-5 right-5">
+                                        <div class="flex gap-2 mb-2">
+                                            <span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">Featured</span>
+                                        </div>
+                                        <h2 class="text-3xl font-display font-bold text-white mb-1">Neon Blitz</h2>
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-xs text-gray-300">12k Players Online</p>
+                                            <button class="bg-white text-black px-4 py-2 rounded-xl text-xs font-bold">PLAY</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- List -->
+                                <h3 class="text-sm font-display font-bold text-white mb-3">Trending Games</h3>
+                                <div class="space-y-3">
+                                    <div class="flashlight-card p-3 flex items-center gap-4" data-label="List Item: Cyber Drift">
+                                        <div class="w-16 h-16 rounded-xl bg-gray-800 bg-[url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=200')] bg-cover"></div>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-bold text-white">Cyber Drift</h4>
+                                            <p class="text-[10px] text-gray-400">Racing • Multi</p>
+                                        </div>
+                                        <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><i class="fa-solid fa-play text-xs"></i></button>
+                                    </div>
+                                    <div class="flashlight-card p-3 flex items-center gap-4" data-label="List Item: Void Jump">
+                                        <div class="w-16 h-16 rounded-xl bg-gray-800 bg-[url('https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=200')] bg-cover"></div>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-bold text-white">Void Jump</h4>
+                                            <p class="text-[10px] text-gray-400">Platformer • Solo</p>
+                                        </div>
+                                        <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><i class="fa-solid fa-play text-xs"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div class="footer-nav" data-label="Component: Footer Nav">
+                                <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
+                                <div class="nav-item"><i class="fa-solid fa-crown"></i>Leagues</div>
+                                <div class="nav-item active"><div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center -mt-6 shadow-lg shadow-blue-500/30 text-white"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
+                                <div class="nav-item"><i class="fa-solid fa-gem"></i>Rewards</div>
+                                <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCREEN 9.0: REWARDS HUB -->
+                    <div class="artboard-wrapper" data-label="Screen 9.0 Wrapper">
+                        <div class="artboard-label"><span>9.0 Rewards Hub</span></div>
+                        <div class="artboard relative bg-mesh-dark" data-label="Artboard: Rewards">
+                            <!-- HEADER -->
+                            <div class="header-glass" data-label="Component: Header">
+                                <h2 class="text-lg font-display font-bold text-white">Rewards</h2>
+                                <div class="flex gap-2">
+                                    <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
+                                    <div class="resource-pill bg-green-900/40 border-green-500/30"><i class="fa-solid fa-dollar-sign text-green-400 text-[10px]"></i><span class="text-xs font-bold text-green-400">$2.50</span></div>
+                                </div>
+                            </div>
+
+                            <div class="h-full overflow-y-auto pt-24 pb-28 px-5 no-scrollbar">
+                                <!-- Double Deposit Banner -->
+                                <div class="flashlight-card p-0 h-32 relative overflow-hidden mb-4 bg-gradient-to-r from-green-900 to-emerald-950 border-green-500/20" data-label="Card: Deposit Promo">
+                                    <div class="absolute right-0 top-0 h-full w-1/2 bg-[url('https://images.unsplash.com/photo-1580519542036-c47de6196ba5?q=80&w=400')] bg-cover mix-blend-overlay opacity-30"></div>
+                                    <div class="relative z-10 p-5 flex flex-col justify-center h-full">
+                                        <h3 class="text-white font-display font-bold text-lg leading-tight">Double Your<br>Deposit</h3>
+                                        <button class="mt-3 bg-green-500 text-black text-[10px] font-bold px-4 py-2 rounded-full w-max">DEPOSIT NOW</button>
+                                    </div>
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-6xl font-black text-green-400 opacity-20 italic">2X</div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div class="flashlight-card p-4 bg-[#111]" data-label="Card: Referrals">
+                                        <p class="text-[10px] text-gray-400">Refer friends</p>
+                                        <h4 class="text-sm font-bold text-white mb-4">Cash Rewards</h4>
+                                        <i class="fa-solid fa-user-plus text-2xl text-gray-600"></i>
+                                    </div>
+                                    <div class="flashlight-card p-4 bg-[#111]" data-label="Card: Daily Ops">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-xs font-bold text-white">Daily Ops</span>
+                                            <span class="text-[10px] text-green-400 font-bold">$1.00</span>
+                                        </div>
+                                        <div class="w-full bg-gray-800 h-1.5 rounded-full mb-3"><div class="w-1/2 h-full bg-blue-500 rounded-full"></div></div>
+                                        <i class="fa-solid fa-bullseye text-2xl text-orange-500"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Golden Egg Offer -->
+                                <div class="flashlight-card p-0 h-40 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden mb-4" data-label="Card: Golden Egg">
+                                    <div class="absolute -left-6 top-4 text-[120px] leading-none">🥚</div>
+                                    <div class="absolute right-5 top-5 text-right">
+                                        <div class="text-[10px] text-gray-400">Instantly get</div>
+                                        <div class="text-3xl font-display font-bold text-white">$20</div>
+                                        <div class="text-[10px] text-yellow-400 font-bold">+ Daily Gift</div>
+                                        <div class="text-xl font-bold text-gray-500">$1</div>
+                                    </div>
+                                    <div class="absolute bottom-3 left-5 text-[9px] text-gray-600">Total $51 bonus value</div>
+                                </div>
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div class="footer-nav" data-label="Component: Footer Nav">
+                                <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
+                                <div class="nav-item"><i class="fa-solid fa-crown"></i>Leagues</div>
+                                <div class="nav-item"><div class="w-12 h-12 bg-gray-800 border border-white/10 rounded-full flex items-center justify-center -mt-6 text-gray-400"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
+                                <div class="nav-item active"><i class="fa-solid fa-gem"></i>Rewards</div>
+                                <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 3: GAME LOOP -->
+            <div class="flow-section" data-label="Flow: Game Loop">
+                <div class="flow-header" data-label="Header: Game Loop">
+                    <i class="fa-solid fa-gamepad text-blue-500"></i>
+                    03. Game Loop
+                    <span class="flow-tag">Action</span>
+                </div>
+
+                <div class="artboards-container">
+                    
+                    <!-- SCREEN 3.0: MATCHMAKING -->
+                    <div class="artboard-wrapper" data-label="Screen 3.0 Wrapper">
+                        <div class="artboard-label"><span>3.0 Matchmaking</span></div>
+                        <div class="artboard relative bg-mesh-purple p-6 pt-24" data-label="Artboard: Matchmaking">
+                            <!-- Header -->
+                            <div class="header-glass" data-label="Component: Header">
+                                <i class="fa-solid fa-arrow-left text-white text-lg"></i>
+                                <div class="flex gap-2">
+                                    <div class="resource-pill"><i class="fa-solid fa-gem text-pink-500 text-[10px]"></i><span class="text-xs font-bold">120</span></div>
+                                </div>
+                            </div>
+
+                            <h2 class="text-3xl font-display font-bold text-white mb-2">Select Tier</h2>
+                            <p class="text-sm text-gray-400 mb-8">Higher risk, higher reward.</p>
+
+                            <div class="space-y-4">
+                                <!-- Tier Cards -->
+                                <div class="flashlight-card h-24 bg-gradient-to-r from-gray-900 to-black flex p-0 overflow-hidden relative group" data-label="Card: Practice Tier">
+                                    <div class="w-1.5 h-full bg-green-500"></div>
+                                    <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
+                                        <span class="text-[10px] text-green-400 font-bold uppercase tracking-wider mb-1">Practice</span>
+                                        <span class="text-xl font-bold text-white">Free Entry</span>
+                                        <span class="text-xs text-gray-500">No Prize</span>
+                                    </div>
+                                    <div class="absolute right-0 top-0 bottom-0 w-32 bg-[url('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=300')] bg-cover opacity-20 mask-image-linear-to-l"></div>
+                                </div>
+
+                                <div class="flashlight-card h-28 bg-gradient-to-r from-blue-900/40 to-black flex p-0 overflow-hidden relative border-blue-500/30" data-label="Card: Rookie Tier">
+                                    <div class="w-1.5 h-full bg-blue-500"></div>
+                                    <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
+                                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">Rookie</span>
+                                        <div class="text-xl font-bold text-white flex items-center gap-2">3 <i class="fa-solid fa-gem text-sm text-pink-500"></i></div>
+                                        <span class="text-xs text-blue-200">Win 5 Gems</span>
+                                    </div>
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-4xl text-blue-500 opacity-20"><i class="fa-solid fa-shield-cat"></i></div>
+                                </div>
+
+                                <div class="flashlight-card h-24 bg-gradient-to-r from-purple-900/40 to-black flex p-0 overflow-hidden relative border-purple-500/30 opacity-70" data-label="Card: Legend Tier">
+                                    <div class="w-1.5 h-full bg-purple-500"></div>
+                                    <div class="p-4 flex-1 flex flex-col justify-center relative z-10">
+                                        <span class="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Legend</span>
+                                        <div class="text-xl font-bold text-white flex items-center gap-2">6 <i class="fa-solid fa-gem text-sm text-pink-500"></i></div>
+                                        <span class="text-xs text-purple-200">Win 10 Gems</span>
+                                    </div>
+                                    <i class="fa-solid fa-lock absolute right-6 top-1/2 -translate-y-1/2 text-gray-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCREEN 4.5: IN-GAME TUTORIAL OVERLAY -->
+                    <div class="artboard-wrapper" data-label="Screen 4.5 Wrapper">
+                        <div class="artboard-label"><span>4.5 Tutorial Overlay</span></div>
+                        <div class="artboard relative bg-black flex items-center justify-center" data-label="Artboard: Tutorial">
+                            <!-- Faint Game BG -->
+                            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5980?q=80&w=400')] bg-cover opacity-20"></div>
+                            
+                            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-10"></div>
+                            
+                            <div class="relative z-20 text-center p-8">
+                                <div class="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6 relative" data-label="Icon: Hand Gesture">
+                                    <i class="fa-regular fa-hand-pointer text-3xl text-white animate-pulse"></i>
+                                    <div class="absolute -bottom-2 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+                                </div>
+                                <h2 class="text-2xl font-display font-bold text-white mb-2" data-label="Text: Tutorial Title">Drag to Move</h2>
+                                <p class="text-sm text-gray-400 mb-8" data-label="Text: Tutorial Desc">Your ship fires automatically.<br>Dodge debris.</p>
+                                <button class="btn-primary px-8 py-3 text-xs w-full" data-label="Button: Ready">I'M READY</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCREEN 5.0: GAMEPLAY -->
+                    <div class="artboard-wrapper" data-label="Screen 5.0 Wrapper">
+                        <div class="artboard-label"><span>5.0 Gameplay</span></div>
+                        <div class="artboard relative bg-black overflow-hidden" data-label="Artboard: Gameplay">
+                            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5980?q=80&w=400')] bg-cover opacity-60"></div>
+                            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80"></div>
+                            
+                            <!-- HUD -->
+                            <div class="absolute top-14 left-0 w-full px-5 flex justify-between items-center" data-label="HUD: Score">
+                                <div class="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl">
+                                    <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider">Score</span>
+                                    <span class="text-xl font-display font-bold text-white">2,450</span>
+                                </div>
+                                <div class="w-12 h-12 rounded-full border-2 border-white/20 flex items-center justify-center bg-black/40 backdrop-blur-md">
+                                    <span class="text-sm font-bold text-yellow-400">45</span>
+                                </div>
+                            </div>
+
+                            <!-- Game Elements -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[40px] border-b-cyan-400 filter drop-shadow-[0_0_20px_cyan]" data-label="Element: Player Ship"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 4: SOCIAL & SETTINGS -->
+            <div class="flow-section" data-label="Flow: Social">
+                <div class="flow-header" data-label="Header: Social">
+                    <i class="fa-solid fa-users text-gold-500"></i>
+                    04. Social & Settings
+                    <span class="flow-tag">Meta</span>
+                </div>
+
+                <div class="artboards-container">
+                    
+                    <!-- SCREEN 6.0: LEADERBOARD -->
+                    <div class="artboard-wrapper" data-label="Screen 6.0 Wrapper">
+                        <div class="artboard-label"><span>6.0 Leaderboard</span></div>
+                        <div class="artboard relative bg-mesh-gold" data-label="Artboard: Leaderboard">
+                            <div class="header-glass" data-label="Component: Header">
+                                <h2 class="text-lg font-display font-bold text-white">Global Elite</h2>
+                                <div class="resource-pill bg-yellow-900/40 border-yellow-500/30"><span class="text-[10px] text-yellow-400 font-bold uppercase">Season 4</span></div>
+                            </div>
+
+                            <div class="pt-24 px-5 pb-28 h-full overflow-y-auto no-scrollbar">
+                                <!-- Podium -->
+                                <div class="flex justify-center items-end gap-3 mb-8" data-label="Component: Podium">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-700 border border-gray-500 mb-1"></div>
+                                        <div class="text-[10px] font-bold text-gray-400">#2 Neon</div>
+                                        <div class="h-16 w-12 bg-white/5 rounded-t-lg border-t border-white/10"></div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa-solid fa-crown text-yellow-400 text-lg mb-1 drop-shadow-lg"></i>
+                                        <div class="w-14 h-14 rounded-full bg-gray-700 border-2 border-yellow-400 mb-1 shadow-[0_0_15px_rgba(255,215,0,0.4)]"></div>
+                                        <div class="text-[10px] font-bold text-white">#1 Cyber</div>
+                                        <div class="h-24 w-16 bg-gradient-to-b from-yellow-900/40 to-black rounded-t-lg border-t border-yellow-500/30"></div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-700 border border-orange-700 mb-1"></div>
+                                        <div class="text-[10px] font-bold text-gray-400">#3 Pixel</div>
+                                        <div class="h-12 w-12 bg-white/5 rounded-t-lg border-t border-white/10"></div>
+                                    </div>
+                                </div>
+
+                                <!-- List -->
+                                <div class="space-y-2">
+                                    <div class="bg-white/5 p-3 rounded-xl border border-white/5 flex items-center" data-label="List Item: User 4">
+                                        <span class="text-xs font-bold text-gray-500 w-6">4</span>
+                                        <div class="w-8 h-8 rounded-full bg-gray-800 mr-3"></div>
+                                        <span class="text-sm font-bold text-white flex-1">VoidWalker</span>
+                                        <span class="text-xs font-bold text-blue-400">8,900</span>
+                                    </div>
+                                    <!-- User -->
+                                    <div class="bg-blue-900/20 p-3 rounded-xl border border-blue-500/30 flex items-center transform scale-105 shadow-lg" data-label="List Item: Current User">
+                                        <span class="text-xs font-bold text-white w-6">142</span>
+                                        <div class="w-8 h-8 rounded-full bg-gray-800 mr-3 border border-white"></div>
+                                        <span class="text-sm font-bold text-white flex-1">YOU</span>
+                                        <span class="text-xs font-bold text-yellow-400">2,450</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div class="footer-nav" data-label="Component: Footer Nav">
+                                <div class="nav-item"><i class="fa-solid fa-trophy"></i>Results</div>
+                                <div class="nav-item active"><i class="fa-solid fa-crown text-yellow-400"></i><span class="text-white">Leagues</span></div>
+                                <div class="nav-item"><div class="w-12 h-12 bg-gray-800 border border-white/10 rounded-full flex items-center justify-center -mt-6 text-gray-400"><i class="fa-solid fa-gamepad text-xl mb-0"></i></div></div>
+                                <div class="nav-item"><i class="fa-solid fa-gem"></i>Rewards</div>
+                                <div class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SCREEN 10.0: SETTINGS -->
+                    <div class="artboard-wrapper" data-label="Screen 10.0 Wrapper">
+                        <div class="artboard-label"><span>10.0 Settings</span></div>
+                        <div class="artboard relative bg-[#050505] p-6 pt-24" data-label="Artboard: Settings">
+                            <div class="header-glass" data-label="Component: Header">
+                                <div class="flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer">
+                                    <i class="fa-solid fa-arrow-left"></i> <span class="text-sm font-bold">Back</span>
+                                </div>
+                            </div>
+
+                            <h2 class="text-2xl font-display font-bold text-white mb-8">Settings</h2>
+
+                            <div class="space-y-3">
+                                <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]" data-label="Option: Cash Out">
+                                    <div>
+                                        <div class="text-green-400 font-bold text-sm">Cash Out</div>
+                                        <div class="text-[10px] text-gray-500">Withdraw winnings</div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-gray-600"></i>
+                                </div>
+                                <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]" data-label="Option: Sound">
+                                    <div>
+                                        <div class="text-white font-bold text-sm">Sound & Haptics</div>
+                                        <div class="text-[10px] text-gray-500">Preferences</div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-gray-600"></i>
+                                </div>
+                                <div class="flashlight-card p-4 flex justify-between items-center bg-[#111]" data-label="Option: Support">
+                                    <div>
+                                        <div class="text-white font-bold text-sm">Support</div>
+                                        <div class="text-[10px] text-gray-500">Help & FAQ</div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-gray-600"></i>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 pt-6 border-t border-white/5 space-y-4">
+                                <div class="text-sm font-bold text-orange-500">Log Out</div>
+                                <div class="text-xs text-gray-500">Privacy Policy</div>
+                                <div class="text-xs text-gray-500">Terms of Service</div>
+                            </div>
+                            
+                            <div class="absolute bottom-10 left-0 w-full text-center text-[10px] text-gray-700 font-mono">v2.4.0 (Build 892)</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Text Animation
+            const treeContainer = document.getElementById('tree-container');
+            const workspaceRoot = document.getElementById('workspace-root');
+            const highlightBox = document.getElementById('highlight-box');
+            const downloadBtn = document.getElementById('toggle-download-mode');
+            const modeStatus = document.getElementById('mode-status');
+            const mainViewport = document.getElementById('main-viewport');
+
+            let isDownloadMode = false;
+            let currentHighlightEl = null;
+
+            // --- 1. DOWNLOAD MODE LOGIC ---
+            downloadBtn.addEventListener('click', () => {
+                isDownloadMode = !isDownloadMode;
+                downloadBtn.classList.toggle('active');
+                
+                if (isDownloadMode) {
+                    document.body.classList.add('selection-active');
+                    downloadBtn.innerHTML = '<i class="fa-solid fa-xmark"></i> Exit Download Mode';
+                    modeStatus.style.opacity = '1';
+                } else {
+                    document.body.classList.remove('selection-active');
+                    downloadBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Toggle Download Mode';
+                    modeStatus.style.opacity = '0';
+                    hideHighlight();
+                }
+            });
+
+            // --- 2. HIERARCHY BUILDER ---
+            // Helper to see if element is "significant" enough to show
+            function isSignificant(el) {
+                if (el.nodeType !== 1) return false;
+                
+                // Allow specific semantic tags and classes for deeper granularity
+                const significantTags = ['BUTTON', 'IMG', 'I', 'INPUT'];
+                const significantClasses = [
+                    'flow-section', 'artboard', 'flashlight-card', 
+                    'header-glass', 'footer-nav', 'resource-pill', 
+                    'nav-item', 'btn-primary'
+                ];
+
+                if (significantTags.includes(el.tagName)) return true;
+                if (significantClasses.some(c => el.classList.contains(c))) return true;
+                if (el.hasAttribute('data-label')) return true;
+                
+                return false;
+            }
+
+            function getIconForElement(el) {
+                if (el.classList.contains('flow-section')) return '<i class="fa-solid fa-layer-group text-blue-500"></i>';
+                if (el.classList.contains('artboard')) return '<i class="fa-solid fa-mobile-screen text-gray-400"></i>';
+                if (el.classList.contains('flashlight-card')) return '<i class="fa-solid fa-square text-gray-500"></i>';
+                if (el.tagName === 'BUTTON') return '<i class="fa-regular fa-square-check text-green-500"></i>';
+                if (el.tagName === 'IMG') return '<i class="fa-regular fa-image text-purple-400"></i>';
+                if (el.tagName === 'I') return '<i class="fa-solid fa-icons text-yellow-500"></i>';
+                return '<i class="fa-solid fa-cube text-gray-700"></i>';
+            }
+
+            function getLabel(el) {
+                if (el.dataset.label) return el.dataset.label;
+                if (el.classList.contains('flow-section')) return 'Section';
+                if (el.classList.contains('artboard')) return 'Artboard';
+                if (el.tagName === 'I') return 'Icon';
+                if (el.tagName === 'IMG') return 'Image';
+                return el.tagName.toLowerCase() + (el.id ? '#' + el.id : '');
+            }
+
+            function buildTree(domNode, treeNode, depth = 0) {
+                if (!domNode) return;
+
+                const children = Array.from(domNode.children);
+                
+                children.forEach(child => {
+                    if (isSignificant(child)) {
+                        const item = document.createElement('div');
+                        item.className = 'tree-item';
+                        item.title = getLabel(child); // Tooltip for truncated text
+                        item.innerHTML = `
+                            <span class="tree-indent" style="width:${depth * 12}px"></span>
+                            <span class="tree-icon text-[10px] mr-2">${getIconForElement(child)}</span> 
+                            ${getLabel(child)}`;
+                        
+                        // Interaction
+                        item.addEventListener('mouseenter', () => highlightElement(child));
+                        item.addEventListener('mouseleave', () => {
+                            if(!isDownloadMode) hideHighlight();
+                        });
+                        item.addEventListener('click', () => {
+                            child.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                            if(isDownloadMode) highlightElement(child);
+                        });
+
+                        // Reverse Interaction (Hovering element highlights tree)
+                        child.addEventListener('mouseenter', (e) => {
+                            e.stopPropagation(); // Only highlight deepest child
+                            if(!isDownloadMode) {
+                                document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('active'));
+                                item.classList.add('active');
+                                highlightElement(child);
+                            }
+                        });
+
+                        treeNode.appendChild(item);
+                        
+                        // Recurse
+                        buildTree(child, treeNode, depth + 1);
+                    } else {
+                        // Keep searching down if this node isn't significant itself
+                        buildTree(child, treeNode, depth);
+                    }
+                });
+            }
+
+            // Start building from workspace
+            buildTree(workspaceRoot, treeContainer);
+
+
+            // --- 3. HIGHLIGHT & DOWNLOAD ---
+            function highlightElement(el) {
+                if (!el) return;
+                currentHighlightEl = el;
+                
+                const rect = el.getBoundingClientRect();
+                
+                highlightBox.style.display = 'block';
+                highlightBox.style.width = `${rect.width}px`;
+                highlightBox.style.height = `${rect.height}px`;
+                highlightBox.style.top = `${rect.top}px`;
+                highlightBox.style.left = `${rect.left}px`;
+            }
+
+            function hideHighlight() {
+                highlightBox.style.display = 'none';
+                currentHighlightEl = null;
+            }
+
+            // Global Mouse Move for Highlight Syncing in Download Mode
+            workspaceRoot.addEventListener('mousemove', (e) => {
+                if(!isDownloadMode) return;
+                
+                // Find deepest significant element under cursor
+                const elements = document.elementsFromPoint(e.clientX, e.clientY);
+                const target = elements.find(el => isSignificant(el) && workspaceRoot.contains(el));
+                
+                if (target) {
+                    highlightElement(target);
+                } else {
+                    hideHighlight();
+                }
+            });
+
+            // Click to Download
+            document.addEventListener('click', (e) => {
+                if (!isDownloadMode || !currentHighlightEl) return;
+                
+                if (currentHighlightEl.contains(e.target) || e.target === currentHighlightEl) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    downloadElement(currentHighlightEl);
+                }
+            });
+
+            async function downloadElement(element) {
+                // visual feedback
+                const originalBorder = highlightBox.style.borderColor;
+                highlightBox.style.borderColor = '#fff';
+                highlightBox.style.backgroundColor = 'rgba(255,255,255,0.2)';
+                
+                const label = getLabel(element).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                
+                try {
+                    const canvas = await html2canvas(element, {
+                        backgroundColor: null, 
+                        scale: 2, 
+                        logging: false,
+                        useCORS: true,
+                        onclone: (clonedDoc) => {
+                            const cloneRoot = clonedDoc.body;
+                            
+                            // Iterate over all elements in the captured clone
+                            const allElements = cloneRoot.querySelectorAll('*');
+                            allElements.forEach(el => {
+                                // Logic: Make text transparent, but keep Icons and Images visible
+                                
+                                // Check if it's an icon (FontAwesome usually uses 'i' tags or svg)
+                                const isIcon = el.tagName === 'I' || 
+                                               el.classList.contains('fa') || 
+                                               el.classList.contains('fas') || 
+                                               el.classList.contains('fa-solid') || 
+                                               el.classList.contains('fa-regular') ||
+                                               el.classList.contains('fa-brands');
+
+                                // Check if it's an image
+                                const isImg = el.tagName === 'IMG';
+
+                                if (isIcon) {
+                                    // Explicitly set the color to the computed color 
+                                    // to prevent it inheriting 'transparent' from a parent.
+                                    // Note: We use the clone's window for computed style.
+                                    try {
+                                        const computed = clonedDoc.defaultView.getComputedStyle(el);
+                                        el.style.color = computed.color; 
+                                    } catch(e) {}
+                                    return; 
+                                }
+
+                                if (isImg) return; 
+
+                                // For everything else, hide the text color
+                                el.style.color = 'transparent';
+                                el.style.textShadow = 'none';
+                                
+                                // Optional: if you want to be very aggressive and remove text nodes
+                                // el.childNodes.forEach(node => { if(node.nodeType === 3) node.nodeValue = ''; });
+                                // However, simple color transparency preserves layout best.
+                            });
+                        }
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = `titan_${label}.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    
+                    // Restore visual
+                    setTimeout(() => {
+                        highlightBox.style.borderColor = originalBorder;
+                        highlightBox.style.backgroundColor = 'rgba(48, 209, 88, 0.1)';
+                    }, 200);
+                    
+                } catch (err) {
+                    console.error("Download failed:", err);
+                    alert("Could not download element. Check console.");
+                }
+            }
+
+
+            // --- ORIGINAL ANIMATIONS ---
             const title = document.getElementById('brand-text');
             if (title) {
                 const text = title.innerText;
@@ -688,7 +1064,6 @@
                 });
             }
 
-            // Flashlight Effect
             document.addEventListener('mousemove', (e) => {
                 document.querySelectorAll('.flashlight-card').forEach(card => {
                     const rect = card.getBoundingClientRect();
